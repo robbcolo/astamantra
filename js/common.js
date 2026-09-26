@@ -60,7 +60,7 @@ export const MANTRA_COLOR_GROUP = {
  * ordine mostrare i badge quando un calciatore ne ha più di uno (es. un
  * centrocampista/trequartista mostra prima C poi T, mai il contrario),
  * seguendo lo stesso criterio del macro-ruolo base P/D/C/A. */
-const MANTRA_SIGLA_ORDER = ["Por", "Dc", "Dd", "Ds", "B", "E", "M", "C", "T", "W", "A", "Pc"];
+export const MANTRA_SIGLA_ORDER = ["Por", "Dc", "Dd", "Ds", "B", "E", "M", "C", "T", "W", "A", "Pc"];
 
 /** Tutte le sigle di ruolo Mantra di un calciatore, in ordine "canonico".
  * Nel listone i doppi/tripli ruoli si trovano separati da "/", ";" o

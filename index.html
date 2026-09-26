@@ -10,7 +10,7 @@
 <div class="wrap">
 
   <div class="topbar">
-    <div class="brand">🏆 <span id="leagueName">FantaMantra Patti</span><span class="sub">Asta live</span></div>
+    <div class="brand">🏆 <span id="leagueName">FantaMantra Patti</span></div>
     <div class="row center">
       <span id="connDot" class="pill">● collegamento…</span>
       <button id="btnChangeTeam" class="btn ghost hidden">Cambia squadra</button>
@@ -166,14 +166,17 @@ Squadra 2
             <div class="player-name-row">
               <div>
                 <div class="player-name" id="playerName">—</div>
-                <div class="player-meta" id="playerMeta">—</div>
+                <div class="player-meta-row">
+                  <img id="playerMetaLogo" class="stage-club-logo" alt="" />
+                  <div class="player-meta" id="playerMeta">—</div>
+                </div>
               </div>
               <div id="playerSeasonStats" class="player-season-stats"></div>
             </div>
 
             <div class="bid-display">
               <div class="bid-amount-wrap">
-                <span class="bid-coin">🥇</span>
+                <span class="bid-coin">💰</span>
                 <div>
                   <div class="bid-amount" id="currentBid">0</div>
                   <div class="bid-team" id="currentBidTeam">Nessuna offerta</div>
@@ -203,8 +206,36 @@ Squadra 2
     </div>
 
     <div class="card">
-      <h3>Squadre</h3>
+      <div class="teams-tabs-head">
+        <h3>Squadre</h3>
+        <div class="teams-tabs" id="teamsTabs">
+          <button class="teams-tab active" data-tab="rose" id="tabRose">👕 Rose Squadre</button>
+          <button class="teams-tab" data-tab="recap" id="tabRecap">📊 Recap Asta</button>
+        </div>
+      </div>
       <div class="teams-grid" id="teamsGrid"></div>
+      <div id="recapPanel" class="recap-panel hidden">
+        <div class="recap-grid">
+          <div class="recap-card">
+            <h4>Riepilogo asta</h4>
+            <div class="recap-kv-list" id="recapSummaryList"></div>
+          </div>
+          <div class="recap-card">
+            <h4>La mia rosa</h4>
+            <div id="recapRosterTable" class="recap-roster-table"></div>
+          </div>
+          <div class="recap-card">
+            <h4>Diversificazione squadra</h4>
+            <p class="small" style="margin-top:-4px;">Quanti calciatori hai preso per ogni squadra di Serie A.</p>
+            <div id="recapClubDiversification" class="recap-club-grid"></div>
+          </div>
+          <div class="recap-card">
+            <h4>Completamento ruoli</h4>
+            <p class="small" style="margin-top:-4px;">Quanti calciatori hai per ciascun ruolo Mantra.</p>
+            <div id="recapRoleCompletion" class="recap-role-grid"></div>
+          </div>
+        </div>
+      </div>
     </div>
 
   </div>

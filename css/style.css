@@ -158,7 +158,7 @@ label { font-size: 0.85rem; color: var(--text-dim); display: block; margin: 10px
 /* ---------------- Vista live: stage + riepilogo crediti affiancati ---------------- */
 .live-top {
   display: grid;
-  grid-template-columns: minmax(0, 2.2fr) minmax(200px, 1fr);
+  grid-template-columns: minmax(0, 3fr) minmax(160px, 0.8fr);
   gap: 12px;
   align-items: start;
   margin-bottom: 14px;
@@ -171,15 +171,10 @@ label { font-size: 0.85rem; color: var(--text-dim); display: block; margin: 10px
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 10px 12px;
-  max-height: 300px;
-  overflow-y: auto;
-}
-@media (max-width: 860px) {
-  /* Su mobile il riepilogo "Crediti squadre" è impilato sopra/sotto il palco
-     (non affiancato, vedi .live-top sopra), quindi non compete per spazio
-     orizzontale: lo lasciamo crescere con tutte le squadre invece di
-     forzare uno scroll interno, che su schermi piccoli risultava scomodo. */
-  .credits-summary { max-height: none; overflow-y: visible; }
+  /* Niente scroll interno: il pannello cresce in verticale quanto serve per
+     mostrare tutte le squadre senza bisogno di scorrere al suo interno. */
+  max-height: none;
+  overflow-y: visible;
 }
 .cs-head {
   display: flex; align-items: center; justify-content: space-between;
@@ -238,8 +233,8 @@ label { font-size: 0.85rem; color: var(--text-dim); display: block; margin: 10px
   flex: 0 0 auto;
 }
 .player-photo {
-  width: 130px; height: auto; align-self: stretch;
-  min-height: 130px; max-height: 210px;
+  width: 200px; height: auto; align-self: stretch;
+  min-height: 130px; max-height: 260px;
   border-radius: 16px;
   object-fit: cover; background: var(--panel-3);
   border: 2px solid var(--accent);
@@ -297,12 +292,13 @@ label { font-size: 0.85rem; color: var(--text-dim); display: block; margin: 10px
    calciatore (es. C blu + T viola affiancati per un centrocampista/trequartista),
    più un'etichetta col macro-ruolo esteso. */
 .role-badge-group {
-  display: flex; align-items: center; justify-content: center; gap: 5px;
-  margin-bottom: 4px;
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  margin-bottom: 8px;
 }
 .role-badge-chip {
-  font-weight: 800; font-size: 0.68rem;
-  padding: 2px 7px; border-radius: 999px;
+  font-weight: 800; font-size: 0.82rem;
+  padding: 5px 14px; border-radius: 999px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
 }
 .role-badge-chip.mp { background: var(--mp-bg); color: var(--mp-fg); }
 .role-badge-chip.md { background: var(--md-bg); color: var(--md-fg); }
@@ -310,8 +306,8 @@ label { font-size: 0.85rem; color: var(--text-dim); display: block; margin: 10px
 .role-badge-chip.mq { background: var(--mq-bg); color: var(--mq-fg); }
 .role-badge-chip.ma { background: var(--ma-bg); color: var(--ma-fg); }
 .role-badge-label {
-  font-weight: 600; font-size: 0.68rem; color: var(--text-dim);
-  padding: 2px 2px;
+  font-weight: 700; font-size: 0.78rem; color: var(--text-dim);
+  padding: 5px 4px;
 }
 .stage .player-name {
   font-size: clamp(1.1rem, 2.6vw, 1.5rem);
@@ -320,7 +316,18 @@ label { font-size: 0.85rem; color: var(--text-dim); display: block; margin: 10px
   margin: 2px 0 2px 0;
   word-break: break-word;
 }
-.stage .player-meta { color: var(--text-dim); font-size: 0.78rem; margin-bottom: 6px; }
+.stage .player-meta { color: var(--text-dim); font-size: 0.78rem; }
+.player-meta-row {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  margin-bottom: 6px;
+}
+.stage-club-logo {
+  width: 26px; height: 26px; object-fit: contain;
+  flex: 0 0 auto;
+}
+@media (max-width: 560px) {
+  .stage-club-logo { width: 20px; height: 20px; }
+}
 
 .bid-display {
   display: flex; align-items: center; justify-content: center; gap: 14px;
@@ -342,14 +349,14 @@ label { font-size: 0.85rem; color: var(--text-dim); display: block; margin: 10px
   font-weight: 700;
 }
 .timer-ring {
-  font-size: clamp(1rem, 3vw, 1.3rem);
+  font-size: clamp(1.3rem, 4vw, 1.9rem);
   font-weight: 900;
-  min-width: 2.2em; height: 1.5em;
+  min-width: 2.6em; height: 1.9em;
   display: flex; align-items: center; justify-content: center; gap: 4px;
   border-radius: 999px;
   border: none;
   background: #0b0818;
-  padding: 0 14px;
+  padding: 0 18px;
 }
 .timer-ring.low { color: #ff8a97; box-shadow: inset 0 0 0 2px var(--danger); animation: pulse 1s infinite; }
 .timer-ring.mid { color: #ffd67a; box-shadow: inset 0 0 0 2px var(--warn); }
@@ -420,9 +427,16 @@ label { font-size: 0.85rem; color: var(--text-dim); display: block; margin: 10px
      150px: con lo schermo a tutta larghezza, 10 squadre stanno affiancate
      senza bisogno di scorrimento orizzontale. Se davvero non entrano tutte
      (schermi stretti), la riga va a capo invece di scorrere. */
-  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 8px;
   align-items: start;
+}
+@media (min-width: 1300px) {
+  /* Su schermi grandi vogliamo che tutte e 10 le rose stiano su un'unica
+     riga (nessuno scroll verticale per vederle tutte): forziamo esattamente
+     10 colonne invece di lasciare che auto-fit ne metta 8 e mandi le
+     ultime 2 a capo su una seconda riga fuori dallo schermo. */
+  .teams-grid { grid-template-columns: repeat(10, minmax(0, 1fr)); }
 }
 .team-col {
   background: var(--panel-2);
@@ -493,16 +507,16 @@ label { font-size: 0.85rem; color: var(--text-dim); display: block; margin: 10px
   padding: 1px 2px;
   min-width: 15px;
 }
-.tp-role.mp, .tp-row.mp { background: var(--mp-bg); }
-.tp-role.mp { color: var(--mp-fg); }
-.tp-role.md, .tp-row.md { background: var(--md-bg); }
-.tp-role.md { color: var(--md-fg); }
-.tp-role.mc, .tp-row.mc { background: var(--mc-bg); }
-.tp-role.mc { color: var(--mc-fg); }
-.tp-role.mq, .tp-row.mq { background: var(--mq-bg); }
-.tp-role.mq { color: var(--mq-fg); }
-.tp-role.ma, .tp-row.ma { background: var(--ma-bg); }
-.tp-role.ma { color: var(--ma-fg); }
+.tp-role.mp, .tp-row.mp, .recap-role-cell.mp { background: var(--mp-bg); }
+.tp-role.mp, .recap-role-cell.mp { color: var(--mp-fg); }
+.tp-role.md, .tp-row.md, .recap-role-cell.md { background: var(--md-bg); }
+.tp-role.md, .recap-role-cell.md { color: var(--md-fg); }
+.tp-role.mc, .tp-row.mc, .recap-role-cell.mc { background: var(--mc-bg); }
+.tp-role.mc, .recap-role-cell.mc { color: var(--mc-fg); }
+.tp-role.mq, .tp-row.mq, .recap-role-cell.mq { background: var(--mq-bg); }
+.tp-role.mq, .recap-role-cell.mq { color: var(--mq-fg); }
+.tp-role.ma, .tp-row.ma, .recap-role-cell.ma { background: var(--ma-bg); }
+.tp-role.ma, .recap-role-cell.ma { color: var(--ma-fg); }
 .tp-name {
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   color: var(--text);
@@ -562,6 +576,108 @@ label { font-size: 0.85rem; color: var(--text-dim); display: block; margin: 10px
   }
   .team-col.expanded .t-expand-hint { transform: rotate(180deg); }
 }
+
+/* ---------------- Slider "Rose Squadre" / "Recap Asta" ---------------- */
+.teams-tabs-head {
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 10px;
+  margin-bottom: 12px;
+}
+.teams-tabs-head h3 { margin: 0; }
+.teams-tabs {
+  display: inline-flex;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 3px;
+  gap: 2px;
+}
+.teams-tab {
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  font-weight: 700;
+  font-size: 0.85rem;
+  padding: 7px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background .15s ease, color .15s ease;
+  white-space: nowrap;
+}
+.teams-tab:hover { color: var(--text); }
+.teams-tab.active {
+  background: linear-gradient(135deg, #4f8cff, #6f6bff);
+  color: #fff;
+}
+@media (max-width: 560px) {
+  .teams-tabs-head { flex-direction: column; align-items: stretch; }
+  .teams-tabs { justify-content: center; }
+}
+
+/* ---------------- Pannello "Recap Asta" ---------------- */
+.recap-panel.hidden { display: none; }
+.recap-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+  align-items: start;
+}
+.recap-card {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+}
+.recap-card h4 { margin: 0 0 8px 0; font-size: 0.88rem; color: var(--text-dim); }
+.recap-kv-list { display: flex; flex-direction: column; gap: 6px; }
+.recap-kv {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 10px;
+  font-size: 0.9rem;
+}
+.recap-kv strong { font-weight: 800; }
+.recap-roster-table {
+  display: flex; flex-direction: column; gap: 3px;
+  max-height: 320px; overflow-y: auto;
+}
+.recap-roster-row {
+  display: grid;
+  grid-template-columns: minmax(20px, max-content) auto 1fr auto;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 4px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  background: var(--panel);
+}
+.recap-roster-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.recap-roster-price { font-weight: 700; color: #ffd76a; white-space: nowrap; }
+.recap-club-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(52px, 1fr));
+  gap: 8px;
+}
+.recap-club-cell {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  background: var(--panel);
+  border-radius: var(--radius-sm);
+  padding: 8px 4px;
+}
+.recap-club-logo { width: 24px; height: 24px; object-fit: contain; }
+.recap-club-count { font-weight: 800; font-size: 0.9rem; }
+.recap-role-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
+  gap: 6px;
+}
+.recap-role-cell {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  border-radius: var(--radius-sm);
+  padding: 6px 4px;
+  font-weight: 700;
+}
+.recap-role-sigla { font-size: 0.72rem; opacity: 0.85; }
+.recap-role-count { font-size: 1.05rem; font-weight: 900; }
 
 .roster-list { max-height: 50vh; overflow-y: auto; }
 .roster-row {

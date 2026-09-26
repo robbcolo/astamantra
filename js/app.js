@@ -14,6 +14,7 @@ import {
   creditColor, rosterStatus, escapeHtml, ringDisplay, parseListoneCsv,
   shuffle, buildLegheFantacalcioCsv, downloadTextFile, armStuckWatchdog,
   setPlayerPhoto, mantraRoles, mantraColorGroup, forwardPushRank, clubLogoUrlFor,
+  setClubLogo, MANTRA_SIGLA_ORDER,
 } from "./common.js";
 
 const $ = (id) => document.getElementById(id);
@@ -49,6 +50,11 @@ let expandedTeamsOnMobile = new Set();
 function isMobileTeamsLayout() {
   return window.innerWidth <= 860;
 }
+
+// Quale scheda è attiva nel blocco "Squadre": "rose" (rose di tutte le
+// squadre, vista storica) oppure "recap" (riepilogo personale in stile
+// FantaLab: crediti, rosa, diversificazione club, completamento ruoli).
+let teamsActiveTab = "rose";
 
 // Token casuale che identifica QUESTO browser/scheda. Serve solo per la
 // regola "una persona per squadra": quando si sceglie una squadra lo si
@@ -466,6 +472,7 @@ function renderStage() {
     }
     $("playerName").textContent = fullName(currentPlayer);
     $("playerMeta").textContent = [currentPlayer.squadra, currentPlayer.quotazione ? `Qt.A ${currentPlayer.quotazione}` : ""].filter(Boolean).join(" · ");
+    setClubLogo($("playerMetaLogo"), currentPlayer);
     renderPlayerSeasonStats(currentPlayer);
     $("currentBid").textContent = formatCredits(state.currentBid || 0);
     const leadTeam = state.currentBidTeam ? teamsById.get(state.currentBidTeam) : null;
@@ -700,6 +707,7 @@ function renderTeams() {
   const total = names.length;
   $("progressBadge").textContent = state ? progressLabel() : `${total} squadre`;
   renderCreditsSummary(names, budget);
+  if (teamsActiveTab === "recap") renderRecapPanel();
 }
 
 /** Riepilogo compatto dei crediti di TUTTE le squadre, mostrato accanto allo
@@ -753,6 +761,110 @@ $("rosterModalClose").onclick = () => $("rosterModalBackdrop").classList.add("hi
 $("rosterModalBackdrop").addEventListener("click", (e) => {
   if (e.target === $("rosterModalBackdrop")) $("rosterModalBackdrop").classList.add("hidden");
 });
+
+// ---------------------------------------------------------------------------
+// Tab "Rose Squadre" / "Recap Asta"
+// ---------------------------------------------------------------------------
+$("tabRose").onclick = () => setTeamsTab("rose");
+$("tabRecap").onclick = () => setTeamsTab("recap");
+function setTeamsTab(tab) {
+  teamsActiveTab = tab;
+  $("tabRose").classList.toggle("active", tab === "rose");
+  $("tabRecap").classList.toggle("active", tab === "recap");
+  $("teamsGrid").classList.toggle("hidden", tab !== "rose");
+  $("recapPanel").classList.toggle("hidden", tab !== "recap");
+  if (tab === "recap") renderRecapPanel();
+}
+
+/** Pannello "Recap Asta": riepilogo personale in stile FantaLab — crediti,
+ * rilancio massimo, giocatori comprati/chiamati, rosa completa con prezzi,
+ * quanti calciatori per ciascun club di Serie A, e completamento ruoli
+ * Mantra. Mostra i dati della PROPRIA squadra (myTeamId): se non si è
+ * ancora scelta una squadra (es. admin non partecipante) mostra un avviso
+ * invece di un pannello vuoto fuorviante. */
+function renderRecapPanel() {
+  const myTeam = myTeamId ? teamsById.get(myTeamId) : null;
+  if (!myTeam) {
+    $("recapSummaryList").innerHTML = '<p class="small">Scegli una squadra per vedere il tuo recap asta.</p>';
+    $("recapRosterTable").innerHTML = "";
+    $("recapClubDiversification").innerHTML = "";
+    $("recapRoleCompletion").innerHTML = "";
+    return;
+  }
+  const budget = config?.budget || DEFAULT_CONFIG.budget;
+  const rs = rosterStatus(myTeam, rules);
+  const roster = (myTeam.roster || []).slice().sort((a, b) => {
+    const byRole = ROLE_ORDER.indexOf(a.ruolo) - ROLE_ORDER.indexOf(b.ruolo);
+    if (byRole !== 0) return byRole;
+    const byPush = forwardPushRank(a) - forwardPushRank(b);
+    if (byPush !== 0) return byPush;
+    return fullName(a).localeCompare(fullName(b), "it");
+  });
+  const calledCount = state?.calledCount || 0;
+  const totalCount = state?.totalCount || 0;
+
+  // ---- Riepilogo asta: crediti, rilancio max, comprati/chiamati ----
+  $("recapSummaryList").innerHTML = [
+    { label: "I tuoi crediti", value: formatCredits(myTeam.credits) },
+    { label: "Il tuo rilancio max", value: formatCredits(rs.maxSpendibile) },
+    { label: "Giocatori comprati", value: `${roster.length} / ${rules.totaleMax}` },
+    { label: "Giocatori chiamati", value: totalCount ? `${calledCount} / ${totalCount}` : "—" },
+  ].map((r) => `<div class="recap-kv"><span>${escapeHtml(r.label)}</span><strong>${escapeHtml(String(r.value))}</strong></div>`).join("");
+
+  // ---- La mia rosa: tabella completa con prezzo e ruoli Mantra ----
+  if (!roster.length) {
+    $("recapRosterTable").innerHTML = '<p class="small">Ancora nessun giocatore acquistato.</p>';
+  } else {
+    const rows = roster.map((p) => {
+      const sigle = mantraRoles(p);
+      const badges = sigle.map((s) => `<span class="tp-role ${mantraColorGroup(s)}">${escapeHtml(s)}</span>`).join("");
+      const logoUrl = clubLogoUrlFor(p);
+      const logoImg = `<img class="tp-club-logo" src="${escapeHtml(logoUrl || "")}" alt="" style="${logoUrl ? "" : "display:none;"}" onerror="this.style.display='none'" />`;
+      return `<div class="recap-roster-row">
+        <span class="tp-roles">${badges}</span>
+        ${logoImg}
+        <span class="recap-roster-name">${escapeHtml(fullName(p))}</span>
+        <span class="recap-roster-price">${formatCredits(p.price)}</span>
+      </div>`;
+    }).join("");
+    $("recapRosterTable").innerHTML = rows;
+  }
+
+  // ---- Diversificazione squadra: quanti giocatori per club Serie A ----
+  const clubCounts = new Map();
+  for (const p of roster) {
+    const squadra = (p.squadra || "").trim();
+    if (!squadra) continue;
+    clubCounts.set(squadra, (clubCounts.get(squadra) || 0) + 1);
+  }
+  if (!clubCounts.size) {
+    $("recapClubDiversification").innerHTML = '<p class="small">Ancora nessun giocatore acquistato.</p>';
+  } else {
+    const sorted = [...clubCounts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "it"));
+    $("recapClubDiversification").innerHTML = sorted.map(([squadra, count]) => {
+      const logoUrl = clubLogoUrlFor({ squadra });
+      const logoImg = `<img class="recap-club-logo" src="${escapeHtml(logoUrl || "")}" alt="" style="${logoUrl ? "" : "display:none;"}" onerror="this.style.display='none'" />`;
+      return `<div class="recap-club-cell" title="${escapeHtml(squadra)}">
+        ${logoImg}
+        <span class="recap-club-count">${count}</span>
+      </div>`;
+    }).join("");
+  }
+
+  // ---- Completamento ruoli: quanti calciatori per ciascuna sigla Mantra ----
+  const roleCounts = new Map(MANTRA_SIGLA_ORDER.map((s) => [s, 0]));
+  for (const p of roster) {
+    for (const s of mantraRoles(p)) {
+      roleCounts.set(s, (roleCounts.get(s) || 0) + 1);
+    }
+  }
+  $("recapRoleCompletion").innerHTML = [...roleCounts.entries()].map(([sigla, count]) =>
+    `<div class="recap-role-cell ${mantraColorGroup(sigla)}">
+      <span class="recap-role-sigla">${escapeHtml(sigla)}</span>
+      <span class="recap-role-count">${count}</span>
+    </div>`
+  ).join("");
+}
 
 function renderTicker() {
   // Sezione "Ultime assegnazioni" rimossa dalla vista live su richiesta.
