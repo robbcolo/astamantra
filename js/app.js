@@ -13,7 +13,7 @@ import {
   DEFAULT_ROSTER_RULES, DEFAULT_CONFIG, slugify, fullName, formatCredits,
   creditColor, rosterStatus, escapeHtml, ringDisplay, parseListoneCsv,
   shuffle, buildLegheFantacalcioCsv, downloadTextFile, armStuckWatchdog,
-  setPlayerPhoto,
+  setPlayerPhoto, mantraRoles, mantraColorGroup,
 } from "./common.js";
 
 const $ = (id) => document.getElementById(id);
@@ -392,25 +392,49 @@ function renderTeams() {
   const budget = config?.budget || DEFAULT_CONFIG.budget;
   for (const team of names) {
     const rs = rosterStatus(team, rules);
-    const div = document.createElement("div");
-    div.className = "team-card" +
+    const col = document.createElement("div");
+    col.className = "team-col" +
       (team.id === myTeamId ? " me" : "") +
       (state && state.currentBidTeam === team.id ? " leading" : "");
-    const roster = (team.roster || []).slice().sort((a, b) => ROLE_ORDER.indexOf(a.ruolo) - ROLE_ORDER.indexOf(b.ruolo));
-    const pct = budget > 0 ? Math.max(0, Math.min(100, Math.round((team.credits / budget) * 100))) : 100;
-    const chips = roster.slice(-8).map((p) =>
-      `<span class="role-chip ${ROLE_CLASS[p.ruolo] || ""}" title="${escapeHtml(fullName(p))} (${formatCredits(p.price)})">${escapeHtml((p.ruoloMantra || ROLE_SHORT[p.ruolo] || "").split("/")[0])}</span>`
-    ).join("");
-    div.innerHTML = `
-      <div class="t-name">${escapeHtml(team.name)}</div>
-      <div class="t-credits" style="color:${creditColor(team.credits, budget)}">${formatCredits(team.credits)}</div>
-      <div class="t-budget-bar"><span style="width:${pct}%; background:${pct <= 15 ? "var(--danger)" : pct <= 35 ? "var(--warn)" : ""}"></span></div>
-      <div class="t-sub">${rs.portieri}/${rules.portiereMin}-${rules.portiereMax} Por · ${rs.totale}/${rules.totaleMin}-${rules.totaleMax} tot</div>
+    // Ordine SEMPRE per macro-ruolo base (P poi D poi C poi A), indipendente
+    // dall'ordine in cui i giocatori sono stati acquistati: un centrocampista
+    // comprato dopo un attaccante va comunque visualizzato prima di lui.
+    const roster = (team.roster || []).slice().sort((a, b) => {
+      const byRole = ROLE_ORDER.indexOf(a.ruolo) - ROLE_ORDER.indexOf(b.ruolo);
+      if (byRole !== 0) return byRole;
+      return fullName(a).localeCompare(fullName(b), "it");
+    });
+    const rows = roster.map((p) => {
+      // Un calciatore con più ruoli Mantra (es. "C;T" o "W;A") mostra un
+      // badge colorato per ciascuna sigla, in ordine canonico (es. prima il
+      // centrocampista C, poi il trequartista T) — come nello screenshot
+      // FantaLab. Lo sfondo della riga segue il PRIMO ruolo.
+      const sigle = mantraRoles(p);
+      const grpPrincipale = mantraColorGroup(sigle[0]);
+      const badges = sigle.map((s) => {
+        const g = mantraColorGroup(s);
+        return `<span class="tp-role ${g}">${escapeHtml(s)}</span>`;
+      }).join("");
+      return `<div class="tp-row ${grpPrincipale}" title="${escapeHtml(fullName(p))} (${formatCredits(p.price)})">
+        <span class="tp-roles">${badges}</span>
+        <span class="tp-name">${escapeHtml(fullName(p))}</span>
+      </div>`;
+    }).join("");
+    col.innerHTML = `
+      <div class="t-head">
+        <span class="t-name">${escapeHtml(team.name)}</span>
+      </div>
+      <div class="tp-list">${rows}</div>
+      <div class="t-foot">
+        <span class="t-foot-chip mp" title="Portieri acquistati">🧤 ${rs.portieri}</span>
+        <span class="t-foot-chip mov" title="Giocatori di movimento acquistati">⚙️ ${rs.movimento}</span>
+        <span class="t-foot-budget" style="color:${creditColor(team.credits, budget)}" title="Crediti residui">${formatCredits(team.credits)}</span>
+        <span class="t-foot-max" title="Massimo spendibile su un giocatore restando in regola">MAX ${formatCredits(rs.maxSpendibile)}</span>
+      </div>
       ${rs.rischioPortieri ? '<div class="t-sub t-warn">⚠ rischio portieri</div>' : ""}
-      ${chips ? `<div class="t-chips">${chips}</div>` : ""}
     `;
-    div.onclick = () => openRosterModal(team);
-    grid.appendChild(div);
+    col.onclick = () => openRosterModal(team);
+    grid.appendChild(col);
   }
   const total = names.length;
   $("progressBadge").textContent = state ? progressLabel() : `${total} squadre`;

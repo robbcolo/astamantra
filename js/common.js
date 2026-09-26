@@ -43,6 +43,52 @@ export const ROLE_CLASS = {
   Portiere: "role-p", Difensore: "role-d", Centrocampista: "role-c", Attaccante: "role-a",
 };
 
+/** Gruppo di colore "alla FantaLab" per la sigla di ruolo Mantra: 5 gruppi
+ * pastello (P arancione, D verde, C blu, T/W viola "trequartisti", A rosso).
+ * Usato solo per il colore del chip nella rosa: l'ORDINE dei giocatori in
+ * rosa segue sempre e comunque il macro-ruolo base (P/D/C/A, da ROLE_ORDER),
+ * mai questo raggruppamento a 5 colori. */
+export const MANTRA_COLOR_GROUP = {
+  Por: "mp",
+  Dc: "md", Dd: "md", Ds: "md", B: "md",
+  E: "mc", M: "mc", C: "mc",
+  T: "mq", W: "mq",
+  A: "ma", Pc: "ma",
+};
+
+/** Ordine "canonico" delle sigle Mantra, usato solo per decidere in che
+ * ordine mostrare i badge quando un calciatore ne ha più di uno (es. un
+ * centrocampista/trequartista mostra prima C poi T, mai il contrario),
+ * seguendo lo stesso criterio del macro-ruolo base P/D/C/A. */
+const MANTRA_SIGLA_ORDER = ["Por", "Dc", "Dd", "Ds", "B", "E", "M", "C", "T", "W", "A", "Pc"];
+
+/** Tutte le sigle di ruolo Mantra di un calciatore, in ordine "canonico".
+ * Nel listone i doppi/tripli ruoli si trovano separati da "/", ";" o
+ * spazio a seconda della fonte del CSV (es. "C;T", "Dd/E", "W A"): li
+ * gestiamo tutti. Se il campo è vuoto, usa la sigla base del macro-ruolo
+ * (P/D/C/A) come singolo elemento. */
+export function mantraRoles(player) {
+  const raw = (player.ruoloMantra || "").trim();
+  let sigle = raw ? raw.split(/[/;,\s]+/).map((s) => s.trim()).filter(Boolean) : [];
+  if (!sigle.length) sigle = [ROLE_SHORT[player.ruolo] || "?"];
+  return sigle.slice().sort((a, b) => {
+    const ia = MANTRA_SIGLA_ORDER.indexOf(a);
+    const ib = MANTRA_SIGLA_ORDER.indexOf(b);
+    return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
+  });
+}
+
+/** Sigla di ruolo Mantra "principale" (la prima in ordine canonico) da
+ * usare ovunque serva un'unica etichetta/colore per il calciatore, es. per
+ * decidere in quale sezione di colore raggrupparlo. */
+export function primaryMantraRole(player) {
+  return mantraRoles(player)[0];
+}
+
+export function mantraColorGroup(sigla) {
+  return MANTRA_COLOR_GROUP[sigla] || "mc";
+}
+
 export const DEFAULT_ROSTER_RULES = {
   portiereMin: 3, portiereMax: 5, totaleMin: 26, totaleMax: 34,
 };
@@ -146,8 +192,16 @@ export function rosterStatus(team, rules) {
   const portieriMancanti = Math.max(0, rules.portiereMin - portieri);
   const rischioPortieri = portieriMancanti > 0 && portieriMancanti >= postiRimasti;
 
+  // Massimo teoricamente spendibile per UN acquisto restando comunque in
+  // grado di completare la rosa minima: i crediti residui meno 1 credito
+  // "di riserva" per ognuno degli altri posti ancora da riempire.
+  const mancantiDopoQuesto = Math.max(0, rules.totaleMin - totale - 1);
+  const maxSpendibile = Math.max(0, (team.credits ?? 0) - mancantiDopoQuesto);
+
   return {
     portieri, totale,
+    movimento: totale - portieri,
+    maxSpendibile,
     complete: portieri >= rules.portiereMin && totale >= rules.totaleMin,
     missing,
     rischioPortieri,

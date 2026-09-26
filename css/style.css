@@ -243,29 +243,103 @@ label { font-size: 0.85rem; color: var(--text-dim); display: block; margin: 10px
 
 /* ---------------- Squadre / board rose ---------------- */
 
+/* Gruppi di colore "alla FantaLab" per i chip di ruolo Mantra nelle rose:
+   mp = Portieri (arancione chiaro), md = Difensori (verde chiaro),
+   mc = Centrocampisti (blu chiaro), mq = Trequartisti T/W (viola chiaro),
+   ma = Attaccanti (rosso chiaro). Nota: il gruppo trequartisti si chiama
+   "mq" e non "mt" per non entrare in conflitto con la classe utility
+   ".mt" (margin-top) già usata altrove nel sito. */
+:root {
+  --mp-bg: rgba(240,170,60,0.20); --mp-fg: #ffb84d;
+  --md-bg: rgba(60,200,120,0.20); --md-fg: #6fe3a0;
+  --mc-bg: rgba(79,160,255,0.20); --mc-fg: #8fc0ff;
+  --mq-bg: rgba(170,110,255,0.22); --mq-fg: #c6a0ff;
+  --ma-bg: rgba(239,69,87,0.20); --ma-fg: #ff8a97;
+}
+
 .teams-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
-  gap: 10px;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(128px, 1fr);
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  align-items: start;
 }
-.team-card {
+.team-col {
   background: var(--panel-2);
   border: 2px solid var(--border);
   border-radius: var(--radius-sm);
-  padding: 10px 12px;
+  padding: 6px 6px 8px;
   cursor: pointer;
   transition: border-color .15s ease;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }
-.team-card:hover { border-color: var(--accent); }
-.team-card.me { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
-.team-card.leading { border-color: var(--ok); box-shadow: 0 0 0 1px var(--ok) inset; }
-.team-card .t-name { font-weight: 700; font-size: 0.95rem; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.team-card .t-credits { font-size: 1.35rem; font-weight: 800; }
-.team-card .t-sub { font-size: 0.75rem; color: var(--text-dim); margin-top: 3px; }
-.team-card .t-warn { color: var(--danger); font-weight: 700; }
-.t-budget-bar { height: 6px; border-radius: 999px; background: rgba(255,255,255,0.08); margin-top: 8px; overflow: hidden; }
-.t-budget-bar > span { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--accent-3), var(--accent)); }
-.t-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+.team-col:hover { border-color: var(--accent); }
+.team-col.me { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+.team-col.leading { border-color: var(--ok); box-shadow: 0 0 0 1px var(--ok) inset; }
+.t-head { margin-bottom: 4px; }
+.team-col .t-name {
+  font-weight: 700; font-size: 0.72rem; line-height: 1.15;
+  display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.tp-list { display: flex; flex-direction: column; gap: 1px; }
+.tp-row {
+  display: grid;
+  grid-template-columns: minmax(16px, max-content) 1fr;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 2px;
+  border-radius: 3px;
+  font-size: 0.66rem;
+  line-height: 1.25;
+}
+.tp-roles { display: flex; gap: 2px; }
+.tp-role {
+  font-size: 0.58rem;
+  font-weight: 800;
+  text-align: center;
+  border-radius: 3px;
+  padding: 0 1px;
+  min-width: 14px;
+}
+.tp-role.mp, .tp-row.mp { background: var(--mp-bg); }
+.tp-role.mp { color: var(--mp-fg); }
+.tp-role.md, .tp-row.md { background: var(--md-bg); }
+.tp-role.md { color: var(--md-fg); }
+.tp-role.mc, .tp-row.mc { background: var(--mc-bg); }
+.tp-role.mc { color: var(--mc-fg); }
+.tp-role.mq, .tp-row.mq { background: var(--mq-bg); }
+.tp-role.mq { color: var(--mq-fg); }
+.tp-role.ma, .tp-row.ma { background: var(--ma-bg); }
+.tp-role.ma { color: var(--ma-fg); }
+.tp-name {
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  color: var(--text);
+}
+.t-foot {
+  margin-top: 6px;
+  padding-top: 5px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.62rem;
+}
+.t-foot-chip {
+  border-radius: 999px;
+  padding: 1px 5px;
+  font-weight: 700;
+}
+.t-foot-chip.mp { background: var(--mp-bg); color: var(--mp-fg); }
+.t-foot-chip.mov { background: var(--md-bg); color: var(--md-fg); }
+.t-foot-budget { font-weight: 800; font-size: 0.72rem; margin-left: auto; }
+.t-foot-max { width: 100%; color: var(--text-dim); font-weight: 600; }
+.team-col .t-sub { font-size: 0.62rem; color: var(--text-dim); margin-top: 3px; }
+.team-col .t-warn { color: var(--danger); font-weight: 700; }
 
 .roster-list { max-height: 50vh; overflow-y: auto; }
 .roster-row {
