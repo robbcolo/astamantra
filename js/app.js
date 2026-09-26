@@ -13,6 +13,7 @@ import {
   DEFAULT_ROSTER_RULES, DEFAULT_CONFIG, slugify, fullName, formatCredits,
   creditColor, rosterStatus, escapeHtml, ringDisplay, parseListoneCsv,
   shuffle, buildLegheFantacalcioCsv, downloadTextFile, armStuckWatchdog,
+  setPlayerPhoto,
 } from "./common.js";
 
 const $ = (id) => document.getElementById(id);
@@ -32,6 +33,7 @@ let state = null;
 let teamsById = new Map();
 let playersById = new Map(); // popolata solo quando si è admin (per la ricerca manuale)
 let currentPlayer = null;
+let lastPhotoPlayerId = null; // evita di ricaricare la <img> ad ogni singolo rilancio
 let myTeamId = localStorage.getItem(LS_KEY);
 let unsubPlayer = null;
 let unsubPlayers = null;
@@ -257,6 +259,12 @@ function renderStage() {
     const badge = $("playerRoleBadge");
     badge.textContent = `${ROLE_ICON[currentPlayer.ruolo] || ""} ${currentPlayer.ruolo}${currentPlayer.ruoloMantra ? " · " + currentPlayer.ruoloMantra : ""}`;
     badge.className = "role-badge " + (ROLE_CLASS[currentPlayer.ruolo] || "");
+    const photo = $("playerPhoto");
+    photo.className = "player-photo " + (ROLE_CLASS[currentPlayer.ruolo] || "");
+    if (lastPhotoPlayerId !== currentPlayer.id) {
+      lastPhotoPlayerId = currentPlayer.id;
+      setPlayerPhoto(photo, currentPlayer);
+    }
     $("playerName").textContent = fullName(currentPlayer);
     $("playerMeta").textContent = [currentPlayer.squadra, currentPlayer.quotazione ? `Qt.A ${currentPlayer.quotazione}` : ""].filter(Boolean).join(" · ");
     $("currentBid").textContent = formatCredits(state.currentBid || 0);
@@ -381,17 +389,25 @@ function renderTeams() {
   const grid = $("teamsGrid");
   grid.innerHTML = "";
   const names = [...teamsById.values()].sort((a, b) => a.name.localeCompare(b.name, "it"));
+  const budget = config?.budget || DEFAULT_CONFIG.budget;
   for (const team of names) {
     const rs = rosterStatus(team, rules);
     const div = document.createElement("div");
     div.className = "team-card" +
       (team.id === myTeamId ? " me" : "") +
       (state && state.currentBidTeam === team.id ? " leading" : "");
+    const roster = (team.roster || []).slice().sort((a, b) => ROLE_ORDER.indexOf(a.ruolo) - ROLE_ORDER.indexOf(b.ruolo));
+    const pct = budget > 0 ? Math.max(0, Math.min(100, Math.round((team.credits / budget) * 100))) : 100;
+    const chips = roster.slice(-8).map((p) =>
+      `<span class="role-chip ${ROLE_CLASS[p.ruolo] || ""}" title="${escapeHtml(fullName(p))} (${formatCredits(p.price)})">${escapeHtml((p.ruoloMantra || ROLE_SHORT[p.ruolo] || "").split("/")[0])}</span>`
+    ).join("");
     div.innerHTML = `
       <div class="t-name">${escapeHtml(team.name)}</div>
-      <div class="t-credits" style="color:${creditColor(team.credits, config?.budget || DEFAULT_CONFIG.budget)}">${formatCredits(team.credits)}</div>
+      <div class="t-credits" style="color:${creditColor(team.credits, budget)}">${formatCredits(team.credits)}</div>
+      <div class="t-budget-bar"><span style="width:${pct}%; background:${pct <= 15 ? "var(--danger)" : pct <= 35 ? "var(--warn)" : ""}"></span></div>
       <div class="t-sub">${rs.portieri}/${rules.portiereMin}-${rules.portiereMax} Por · ${rs.totale}/${rules.totaleMin}-${rules.totaleMax} tot</div>
       ${rs.rischioPortieri ? '<div class="t-sub t-warn">⚠ rischio portieri</div>' : ""}
+      ${chips ? `<div class="t-chips">${chips}</div>` : ""}
     `;
     div.onclick = () => openRosterModal(team);
     grid.appendChild(div);
@@ -704,6 +720,49 @@ $("btnUndo").onclick = async () => {
   }
 };
 
+// "Annulla chiamata": il giocatore attualmente in asta (ancora indeciso, non
+// assegnato) torna disponibile e si ripresenterà in seguito, come se non
+// fosse mai stato chiamato. Diverso da "Annulla ultima assegnazione", che
+// invece disfa una vendita già conclusa.
+$("btnCancelCall").onclick = async () => {
+  if (!state || !state.currentPlayerId) { alert("Nessun giocatore in asta al momento."); return; }
+  if (!["bidding", "paused"].includes(state.status)) return;
+  if (state.currentBidTeam) {
+    if (!confirm("C'è già un'offerta in corso su questo giocatore: annullare comunque la chiamata? Il giocatore tornerà disponibile e si potrà richiamare più avanti.")) return;
+  }
+  await cancelCall();
+};
+
+// "Rilancio manuale": l'admin registra un'offerta fatta a voce da chi è al
+// tavolo, per conto di una squadra (utile per chi non usa un proprio
+// dispositivo durante l'asta dal vivo).
+$("btnManualBid").onclick = () => {
+  if (!state || state.status !== "bidding") { alert("Nessuna asta aperta in questo momento."); return; }
+  populateManualBidTeamSelect();
+  $("manualBidAmount").value = (state.currentBid || 0) + 1;
+  $("manualBidError").textContent = "";
+  $("manualBidModalBackdrop").classList.remove("hidden");
+};
+$("manualBidCancel").onclick = () => $("manualBidModalBackdrop").classList.add("hidden");
+$("manualBidConfirm").onclick = async () => {
+  const teamId = $("manualBidTeamSelect").value;
+  const amount = Number($("manualBidAmount").value);
+  $("manualBidError").textContent = "";
+  if (!teamId) { $("manualBidError").textContent = "Seleziona una squadra."; return; }
+  if (!Number.isFinite(amount) || amount <= 0) { $("manualBidError").textContent = "Inserisci un importo valido."; return; }
+  try {
+    await adminManualBid(teamId, amount);
+    $("manualBidModalBackdrop").classList.add("hidden");
+  } catch (e) {
+    $("manualBidError").textContent = e.message || "Rilancio non riuscito.";
+  }
+};
+function populateManualBidTeamSelect() {
+  const sel = $("manualBidTeamSelect");
+  sel.innerHTML = [...teamsById.values()].sort((a, b) => a.name.localeCompare(b.name, "it"))
+    .map((t) => `<option value="${t.id}">${escapeHtml(t.name)} (${formatCredits(t.credits)} crediti)</option>`).join("");
+}
+
 function timerEndsAtMs() {
   if (!state?.timerEndsAt) return Date.now();
   return state.timerEndsAt.toMillis ? state.timerEndsAt.toMillis() : state.timerEndsAt;
@@ -746,6 +805,52 @@ async function markUnsold() {
   });
 }
 
+async function cancelCall() {
+  if (!state || !state.currentPlayerId) return;
+  const playerId = state.currentPlayerId;
+  try {
+    await updateDoc(doc(db, "players", playerId), { status: "available" });
+    const idx = (config?.drawOrder || []).indexOf(playerId);
+    await updateDoc(doc(db, "state", "auction"), {
+      status: "idle",
+      currentPlayerId: null,
+      currentBid: 0,
+      currentBidTeam: null,
+      timerEndsAt: null,
+      nextIndex: idx >= 0 ? idx : state.nextIndex,
+      calledCount: Math.max(0, (state.calledCount || 0) - 1),
+    });
+  } catch (e) {
+    alert("Errore durante l'annullamento della chiamata: " + e.message);
+  }
+}
+
+/** Rilancio registrato dall'admin per conto di una squadra (offerta fatta a
+ * voce al tavolo). Stessa validazione di un rilancio normale, ma può essere
+ * fatto per QUALSIASI squadra, non solo la propria. */
+async function adminManualBid(teamId, amount) {
+  await runTransaction(db, async (tx) => {
+    const stateRef = doc(db, "state", "auction");
+    const stateSnap = await tx.get(stateRef);
+    const s = stateSnap.data();
+    if (!s || s.status !== "bidding") throw new Error("Nessuna asta aperta in questo momento.");
+    if (!(amount > (s.currentBid || 0))) throw new Error("L'importo deve superare l'offerta attuale.");
+
+    const teamRef = doc(db, "teams", teamId);
+    const teamSnap = await tx.get(teamRef);
+    const team = teamSnap.data();
+    if (!team) throw new Error("Squadra non valida.");
+    if (team.credits < amount) throw new Error(`${team.name} non ha crediti sufficienti per questa offerta.`);
+
+    const timerMs = (config?.bidTimerSeconds ?? DEFAULT_CONFIG.bidTimerSeconds) * 1000;
+    tx.update(stateRef, {
+      currentBid: amount,
+      currentBidTeam: teamId,
+      timerEndsAt: Timestamp.fromMillis(Date.now() + timerMs),
+    });
+  });
+}
+
 async function maybeAutoFinalize() {
   if (autoFinalizing) return;
   if (!state || state.status !== "bidding" || !state.timerEndsAt) return;
@@ -773,6 +878,8 @@ function renderControl() {
   $("btnNext").disabled = !config || !["idle", "sold", "unsold"].includes(state.status);
   $("btnAssignNow").disabled = state.status !== "bidding" || !state.currentBidTeam;
   $("btnMarkUnsold").disabled = state.status !== "bidding";
+  $("btnCancelCall").disabled = !["bidding", "paused"].includes(state.status) || !state.currentPlayerId;
+  $("btnManualBid").disabled = state.status !== "bidding";
   $("btnUndo").disabled = !state.lastSoldPlayerId;
 }
 

@@ -73,6 +73,41 @@ export function fullName(player) {
   return [player.cognome, player.nome].filter(Boolean).join(" ");
 }
 
+// ----------------------------------------------------------------------------
+// Foto calciatori. Le foto NON stanno su Firestore (appesantirebbe i documenti
+// e i costi di lettura), ma come file statici pubblicati insieme al sito, in
+// "data/foto/<slug-nome-cognome>.jpg" — lo stesso identico slug usato per i
+// nomi squadra. Se manca la foto (o il file non esiste ancora), viene mostrata
+// automaticamente una sagoma segnaposto: mai un'icona di immagine rotta.
+// ----------------------------------------------------------------------------
+
+const PHOTO_PLACEHOLDER = "data:image/svg+xml;utf8," + encodeURIComponent(
+  `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+    <rect width="200" height="200" fill="#241c52"/>
+    <circle cx="100" cy="80" r="34" fill="#4a3f8a"/>
+    <path d="M30 178c8-42 42-64 70-64s62 22 70 64" fill="#4a3f8a"/>
+  </svg>`
+);
+
+/** Nome file atteso per la foto di un calciatore (senza estensione/cartella),
+ * usato sia dal sito sia dallo script di download delle foto. */
+export function photoSlug(player) {
+  return slugify(fullName(player));
+}
+
+export function photoUrlFor(player) {
+  return "data/foto/" + photoSlug(player) + ".jpg";
+}
+
+/** Imposta la foto di un calciatore su un elemento <img>, con fallback
+ * automatico alla sagoma segnaposto se il file non esiste. */
+export function setPlayerPhoto(imgEl, player) {
+  if (!imgEl) return;
+  imgEl.onerror = () => { imgEl.onerror = null; imgEl.src = PHOTO_PLACEHOLDER; };
+  imgEl.alt = fullName(player);
+  imgEl.src = player ? photoUrlFor(player) : PHOTO_PLACEHOLDER;
+}
+
 export function formatCredits(n) {
   if (n === null || n === undefined) return "—";
   return Math.round(n).toLocaleString("it-IT");
@@ -135,11 +170,11 @@ export function ringDisplay(state) {
   if (state.status === "bidding" && state.timerEndsAt) {
     const endsAt = state.timerEndsAt.toMillis ? state.timerEndsAt.toMillis() : state.timerEndsAt;
     const secs = Math.max(0, Math.ceil((endsAt - Date.now()) / 1000));
-    return { label: String(secs), cls: secs <= 5 ? "low" : secs <= 10 ? "mid" : "ok" };
+    return { label: "⏳ " + secs, cls: secs <= 5 ? "low" : secs <= 10 ? "mid" : "ok" };
   }
   if (state.status === "paused") {
     const secs = Math.max(0, Math.ceil((state.pausedRemainingMs || 0) / 1000));
-    return { label: secs + "⏸", cls: "mid" };
+    return { label: "⏸ " + secs, cls: "mid" };
   }
   return { label: "—", cls: "ok" };
 }

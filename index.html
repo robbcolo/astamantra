@@ -20,22 +20,27 @@
     </div>
   </div>
 
-  <!-- ============ BARRA DI CONTROLLO ADMIN (visibile solo da loggato) ============ -->
+  <!-- ============ BARRA DI CONTROLLO ADMIN — "pannello principale" (visibile solo da loggato) ============ -->
+  <!-- Qui vive TUTTO ciò che riguarda la conduzione live dell'asta (chiamata,
+       rilancio manuale, assegnazione, pausa, annulla): l'admin gestisce l'asta
+       stando nella stessa vista in cui bida come chiunque altro. Solo
+       configurazione/correzioni/esportazione vivono nel pannello impostazioni
+       qui sotto (⚙️), che è tutt'altra cosa dalla conduzione live. -->
   <div id="adminBar" class="card hidden" style="border-color:var(--accent);">
     <div class="row between">
-      <strong>⚙️ Controllo asta (admin)</strong>
+      <strong>🎛️ Conduzione asta (admin)</strong>
       <span class="pill" id="adminStatusPill">stato: —</span>
     </div>
-    <div class="row mt">
-      <button id="btnNext" class="btn primary grow">🎲 Prossimo</button>
-      <button id="btnAssignNow" class="btn ok grow">✅ Assegna ora</button>
+    <button id="btnNext" class="btn primary block big mt">🎲 Chiama il prossimo giocatore</button>
+    <div class="icon-toolbar mt">
+      <button id="btnManualBid" class="icon-btn accent">🖐️ Rilancio manuale</button>
+      <button id="btnAssignNow" class="icon-btn">✅ Assegna ora</button>
+      <button id="btnMarkUnsold" class="icon-btn">🚫 Nessuna offerta</button>
+      <button id="btnCancelCall" class="icon-btn warn">❌ Annulla chiamata</button>
+      <button id="btnPause" class="icon-btn">⏸ Pausa</button>
+      <button id="btnUndo" class="icon-btn danger">↩️ Annulla ultima assegnazione</button>
+      <button id="btnToggleAdvanced" class="icon-btn">⚙️ Impostazioni ▾</button>
     </div>
-    <div class="row mt">
-      <button id="btnMarkUnsold" class="btn grow">🚫 Nessuna offerta</button>
-      <button id="btnPause" class="btn grow">⏸ Pausa</button>
-      <button id="btnUndo" class="btn danger grow">↩️ Annulla ultima</button>
-    </div>
-    <button id="btnToggleAdvanced" class="btn ghost block mt">⚙️ Impostazioni, correzioni ed esportazione ▾</button>
   </div>
 
   <!-- ============ PANNELLO AVANZATO ADMIN (setup / correzioni / export) ============ -->
@@ -148,16 +153,22 @@ Squadra 2
         <p class="player-meta">Tutti i calciatori del listone sono stati chiamati.</p>
       </div>
       <div id="stagePlayer" class="hidden">
+        <div class="player-photo-wrap">
+          <img id="playerPhoto" class="player-photo" alt="" />
+        </div>
         <span id="playerRoleBadge" class="role-badge"></span>
         <div class="player-name" id="playerName">—</div>
         <div class="player-meta" id="playerMeta">—</div>
 
         <div class="bid-display">
-          <div>
-            <div class="bid-amount" id="currentBid">0</div>
-            <div class="bid-team" id="currentBidTeam">Nessuna offerta</div>
+          <div class="bid-amount-wrap">
+            <span class="bid-coin">🪙</span>
+            <div>
+              <div class="bid-amount" id="currentBid">0</div>
+              <div class="bid-team" id="currentBidTeam">Nessuna offerta</div>
+            </div>
           </div>
-          <div id="timerRing" class="timer-ring ok">—</div>
+          <div id="timerRing" class="timer-ring ok">⏳ —</div>
         </div>
 
         <div class="bid-buttons" id="bidButtons">
@@ -224,6 +235,23 @@ Squadra 2
     <div class="row mt">
       <button class="btn ghost grow" id="altroCancel">Annulla</button>
       <button class="btn primary grow" id="altroConfirm">Rilancia</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: rilancio manuale (admin registra un'offerta verbale per conto di una squadra) -->
+<div id="manualBidModalBackdrop" class="modal-backdrop hidden">
+  <div class="modal" style="max-width:360px;">
+    <h3>🖐️ Rilancio manuale</h3>
+    <p class="small">Registra un'offerta fatta a voce da chi è al tavolo, per conto della sua squadra.</p>
+    <label for="manualBidTeamSelect">Squadra</label>
+    <select id="manualBidTeamSelect"></select>
+    <label for="manualBidAmount">Importo (crediti)</label>
+    <input type="number" id="manualBidAmount" min="1" step="1" />
+    <p id="manualBidError" class="small" style="color:var(--danger); min-height:1.2em;"></p>
+    <div class="row mt">
+      <button class="btn ghost grow" id="manualBidCancel">Annulla</button>
+      <button class="btn primary grow" id="manualBidConfirm">Registra offerta</button>
     </div>
   </div>
 </div>

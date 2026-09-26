@@ -22,5 +22,5 @@ export const firebaseConfig = {
   projectId: "asta-mantra-abd86",
   storageBucket: "asta-mantra-abd86.firebasestorage.app",
   messagingSenderId: "901635131157",
-  appId: "1:901635131157:web:42ee5793f0850d8b618b1c"
+  appId: "1:901635131157:web:42ee5793f0850d8b618b1c",
 };

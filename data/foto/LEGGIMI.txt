@@ -1,0 +1,20 @@
+Metti qui le foto dei calciatori, una per file, con questo nome esatto:
+
+    <nome-e-cognome-in-minuscolo-senza-accenti-separato-da-trattini>.jpg
+
+Esempi:
+    lautaro-martinez.jpg
+    de-ketelaere.jpg
+    rossi-mario.jpg   (se nel listone compaiono sia cognome che nome)
+
+Il sito calcola da solo questo nome a partire dai dati del listone (stessa
+funzione "slugify" usata per i nomi delle squadre), quindi il modo più
+semplice per popolare questa cartella è lanciare una volta lo script
+scripts/scarica_foto.py (vedi le istruzioni scritte in cima a quel file, e
+nel README principale del sito). Se un calciatore non ha una foto qui
+dentro, il sito mostra automaticamente una sagoma segnaposto: non è un
+errore, va tutto bene comunque.
+
+Formati accettati: .jpg (quello che produce lo script). Se aggiungi foto a
+mano in .png o .webp, rinominale con estensione .jpg comunque, oppure fammi
+sapere e aggiungo il supporto per altre estensioni.
