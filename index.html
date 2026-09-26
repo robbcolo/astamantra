@@ -102,6 +102,21 @@ Squadra 2
     </div>
 
     <div class="card">
+      <h3>📜 Storico chiamate</h3>
+      <p class="small">Tutti i calciatori già "risolti" (assegnati o passati senza offerte), dal più recente. Da qui puoi correggere un errore su QUALSIASI calciatore passato, non solo l'ultimo: "Riapri" annulla l'assegnazione e lo rimette disponibile, "Riassegna" lo apre già pronto nel box di assegnazione manuale qui sopra così puoi scegliere subito la squadra giusta. Puoi anche cercare qui un calciatore che per errore non è mai stato chiamato: comparirà come "mai chiamato" e potrai assegnarlo allo stesso modo.</p>
+      <div class="row">
+        <input type="text" id="historySearch" placeholder="Filtra per cognome/nome…" class="grow" />
+        <select id="historyFilterSelect" style="max-width:190px;">
+          <option value="resolved">Assegnati + passati</option>
+          <option value="assigned">Solo assegnati</option>
+          <option value="skipped">Solo passati/mai chiamati</option>
+          <option value="all">Tutti i calciatori</option>
+        </select>
+      </div>
+      <div id="historyList" class="small" style="max-height:320px; overflow-y:auto; margin-top:8px;"></div>
+    </div>
+
+    <div class="card">
       <h3>Esportazione</h3>
       <p class="small">Genera il file CSV da caricare direttamente nell'importazione rose della tua lega su Leghe Fantacalcio.</p>
       <button id="btnExport" class="btn primary block">⬇️ Scarica CSV Leghe Fantacalcio</button>
@@ -148,12 +163,17 @@ Squadra 2
           </div>
           <div class="stage-info">
             <span id="playerRoleBadge" class="role-badge-group"></span>
-            <div class="player-name" id="playerName">—</div>
-            <div class="player-meta" id="playerMeta">—</div>
+            <div class="player-name-row">
+              <div>
+                <div class="player-name" id="playerName">—</div>
+                <div class="player-meta" id="playerMeta">—</div>
+              </div>
+              <div id="playerSeasonStats" class="player-season-stats"></div>
+            </div>
 
             <div class="bid-display">
               <div class="bid-amount-wrap">
-                <span class="bid-coin">🪙</span>
+                <span class="bid-coin">🥇</span>
                 <div>
                   <div class="bid-amount" id="currentBid">0</div>
                   <div class="bid-team" id="currentBidTeam">Nessuna offerta</div>

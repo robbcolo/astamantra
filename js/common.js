@@ -94,15 +94,26 @@ export function mantraColorGroup(sigla) {
  * non cambia mai il macro-ruolo, che resta sempre il criterio primario.
  * Un Difensore che è ANCHE "E" (esterno, di fatto un centrocampista
  * aggiunto) va posizionato "più avanti" nel blocco Difensori, cioè più
- * vicino ai Centrocampisti pur restando un difensore; allo stesso modo un
- * Centrocampista che è ANCHE "T" o "W" (trequartista/ala, di fatto un
- * attaccante aggiunto) va posizionato "più avanti" nel blocco
- * Centrocampisti, più vicino agli Attaccanti. Ritorna 0 (posizione
- * normale) o 1 (spostato in fondo al proprio blocco). */
+ * vicino ai Centrocampisti pur restando un difensore.
+ * Tra i Centrocampisti la scala è a TRE gradini, non solo due: un
+ * centrocampista "puro" (solo C/M/E, mai T/W) resta all'inizio del blocco;
+ * uno che è ANCHE T o W (es. Ekkelenkamp: "C;T") va nel mezzo, più vicino
+ * agli Attaccanti ma ancora prima di chi non ha affatto il ruolo C; infine
+ * chi ha SOLO T/W senza mai C/M/E (es. Colpani, Rabiot se fosse puro T)
+ * chiude il blocco, il più vicino di tutti agli Attaccanti. Ritorna 0
+ * (posizione normale), 1 (spostato più avanti) o 2 (in fondo al blocco). */
 export function forwardPushRank(player) {
   const sigle = mantraRoles(player);
-  if (player.ruolo === "Difensore" && sigle.includes("E")) return 1;
-  if (player.ruolo === "Centrocampista" && (sigle.includes("T") || sigle.includes("W"))) return 1;
+  if (player.ruolo === "Difensore") {
+    return sigle.includes("E") ? 1 : 0;
+  }
+  if (player.ruolo === "Centrocampista") {
+    const hasCentrale = sigle.some((s) => s === "C" || s === "M" || s === "E");
+    const hasTrequartista = sigle.includes("T") || sigle.includes("W");
+    if (hasTrequartista && hasCentrale) return 1; // es. Ekkelenkamp "C;T"
+    if (hasTrequartista && !hasCentrale) return 2; // es. Colpani, solo "T"
+    return 0; // centrocampista puro
+  }
   return 0;
 }
 
@@ -169,6 +180,30 @@ export function setPlayerPhoto(imgEl, player) {
   imgEl.onerror = () => { imgEl.onerror = null; imgEl.src = PHOTO_PLACEHOLDER; };
   imgEl.alt = fullName(player);
   imgEl.src = player ? photoUrlFor(player) : PHOTO_PLACEHOLDER;
+}
+
+/** URL del logo della squadra di Serie A REALE di un calciatore (es. Genoa,
+ * Fiorentina...), NON della fantasquadra che lo ha acquistato — scaricato
+ * con scripts/scarica_loghi.py in data/loghi/<squadra-slug>.png. Restituisce
+ * null se il calciatore non ha una squadra nota nel listone (es. svincolato
+ * senza colonna Sq. compilata): in quel caso non c'è nessun logo da cercare. */
+export function clubLogoUrlFor(player) {
+  const squadra = (player?.squadra || "").trim();
+  if (!squadra) return null;
+  return "data/loghi/" + slugify(squadra) + ".png";
+}
+
+/** Imposta il logo-squadra su un elemento <img>: se il file manca (logo non
+ * ancora scaricato per quella squadra) nasconde semplicemente l'elemento,
+ * invece di mostrare l'icona di immagine rotta del browser. */
+export function setClubLogo(imgEl, player) {
+  if (!imgEl) return;
+  const url = clubLogoUrlFor(player);
+  if (!url) { imgEl.style.display = "none"; return; }
+  imgEl.style.display = "";
+  imgEl.onerror = () => { imgEl.style.display = "none"; };
+  imgEl.alt = player.squadra || "";
+  imgEl.src = url;
 }
 
 export function formatCredits(n) {
@@ -292,6 +327,13 @@ export function parseListoneCsv(text) {
   const iQuot = idx(["quotazione", "qt.a", "quota", "quot."]);
   const iMantra = idx(["ruolo_mantra", "ruolomantra", "mantra", "r.mantra"]);
   const iFuoriLista = idx(["fuori lista", "fuorilista"]);
+  // Statistiche stagione in corso, presenti SOLO nel formato "ufficiale":
+  // PGv (partite giocate), MV (media voto), FM (fantamedia). Nel formato
+  // "semplice" queste colonne non esistono: restano assenti (undefined), e
+  // lo stage le nasconde semplicemente quando mancano.
+  const iPGv = idx(["pgv"]);
+  const iMV = idx(["mv"]);
+  const iFM = idx(["fm"]);
 
   const errors = [];
   if (iRuolo === -1 || iCognome === -1) {
@@ -323,6 +365,9 @@ export function parseListoneCsv(text) {
       squadra: iSquadra !== -1 ? String(row[iSquadra] ?? "").trim() : "",
       quotazione: iQuot !== -1 ? (row[iQuot] ?? "") : "",
       ruoloMantra: iMantra !== -1 ? String(row[iMantra] ?? "").trim() : "",
+      pgv: iPGv !== -1 ? parseStatNumber(row[iPGv]) : null,
+      mv: iMV !== -1 ? parseStatNumber(row[iMV]) : null,
+      fm: iFM !== -1 ? parseStatNumber(row[iFM]) : null,
       status: "available",
       assignedTeam: null,
       price: null,
@@ -330,6 +375,17 @@ export function parseListoneCsv(text) {
   }
   if (players.length === 0) errors.push("Nessun calciatore valido trovato nel file.");
   return { players, errors, excluded };
+}
+
+/** Converte un valore statistico (PGv/MV/FM) dal CSV in un numero, gestendo
+ * la virgola decimale italiana ("6,50") e valori vuoti/placeholder ("-",
+ * "n.d.") restituendo null invece di NaN, così lo stage può nascondere il
+ * dato invece di mostrare "NaN". */
+function parseStatNumber(raw) {
+  const s = String(raw ?? "").trim();
+  if (!s || s === "-" || s.toLowerCase() === "n.d.") return null;
+  const n = Number(s.replace(",", "."));
+  return Number.isFinite(n) ? n : null;
 }
 
 /** Parser CSV minimale ma robusto a virgolette e virgole dentro ai campi. */

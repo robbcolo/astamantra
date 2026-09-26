@@ -13,7 +13,7 @@ import {
   DEFAULT_ROSTER_RULES, DEFAULT_CONFIG, slugify, fullName, formatCredits,
   creditColor, rosterStatus, escapeHtml, ringDisplay, parseListoneCsv,
   shuffle, buildLegheFantacalcioCsv, downloadTextFile, armStuckWatchdog,
-  setPlayerPhoto, mantraRoles, mantraColorGroup, forwardPushRank,
+  setPlayerPhoto, mantraRoles, mantraColorGroup, forwardPushRank, clubLogoUrlFor,
 } from "./common.js";
 
 const $ = (id) => document.getElementById(id);
@@ -39,6 +39,16 @@ let myTeamId = localStorage.getItem(LS_KEY);
 let unsubPlayer = null;
 let unsubPlayers = null;
 let kickedOut = false; // true se un altro dispositivo ha preso il controllo della nostra squadra
+
+// Su smartphone le rose delle squadre partono chiuse (solo intestazione +
+// riepilogo) e si aprono al tap, per evitare una pagina lunghissima con le
+// rose di tutte le squadre aperte insieme. Questo Set tiene traccia di QUALI
+// squadre sono attualmente espanse (sopravvive ai re-render provocati dagli
+// snapshot di Firestore, che altrimenti richiuderebbero tutto ad ogni update).
+let expandedTeamsOnMobile = new Set();
+function isMobileTeamsLayout() {
+  return window.innerWidth <= 860;
+}
 
 // Token casuale che identifica QUESTO browser/scheda. Serve solo per la
 // regola "una persona per squadra": quando si sceglie una squadra lo si
@@ -78,6 +88,7 @@ onSnapshot(doc(db, "config", "public"), (snap) => {
     config = null;
     show("waitingView");
     renderTeamsAdmin();
+    renderHistoryList();
     return;
   }
   config = snap.data();
@@ -107,6 +118,7 @@ onSnapshot(doc(db, "config", "public"), (snap) => {
   renderTeamsAdmin();
   populateManualTeamSelect();
   renderControl();
+  renderHistoryList();
 }, (err) => {
   configResolved = true;
   console.error(err);
@@ -313,6 +325,7 @@ function ensureCoreSubscriptions() {
     renderTeamsAdmin();
     populateManualTeamSelect();
     renderControl();
+    renderHistoryList();
     refreshTeamSelectOccupancy();
     checkStillMyTeam();
   });
@@ -324,6 +337,7 @@ function ensureCoreSubscriptions() {
     renderStage();
     renderTicker();
     renderControl();
+    renderHistoryList();
   });
 }
 
@@ -374,6 +388,7 @@ onAuthStateChanged(auth, (user) => {
         playersById = new Map();
         snap.forEach((d) => playersById.set(d.id, { id: d.id, ...d.data() }));
         renderManualSearchResults();
+        renderHistoryList();
       });
     }
   } else {
@@ -451,10 +466,35 @@ function renderStage() {
     }
     $("playerName").textContent = fullName(currentPlayer);
     $("playerMeta").textContent = [currentPlayer.squadra, currentPlayer.quotazione ? `Qt.A ${currentPlayer.quotazione}` : ""].filter(Boolean).join(" · ");
+    renderPlayerSeasonStats(currentPlayer);
     $("currentBid").textContent = formatCredits(state.currentBid || 0);
     const leadTeam = state.currentBidTeam ? teamsById.get(state.currentBidTeam) : null;
     $("currentBidTeam").textContent = leadTeam ? `al rilancio: ${leadTeam.name}` : "Nessuna offerta ancora";
   }
+}
+
+/** Statistiche stagione 26/27 (partite giocate, media voto, fantamedia)
+ * accanto al nome sullo stage. Presenti solo se il listone caricato è nel
+ * formato "ufficiale" (colonne PGv/MV/FM): se il calciatore non ha questi
+ * dati (formato "semplice", o valore mancante nel CSV), la sezione resta
+ * vuota invece di mostrare trattini o "N/D" per ognuno dei tre. */
+function renderPlayerSeasonStats(player) {
+  const wrap = $("playerSeasonStats");
+  if (!wrap) return;
+  const stats = [
+    { label: "PG", value: player.pgv },
+    { label: "MV", value: player.mv },
+    { label: "FM", value: player.fm },
+  ].filter((s) => s.value !== null && s.value !== undefined);
+  if (!stats.length) { wrap.innerHTML = ""; wrap.classList.add("hidden"); return; }
+  wrap.classList.remove("hidden");
+  wrap.innerHTML = stats.map((s) =>
+    `<div class="pss-stat"><span class="pss-value">${escapeHtml(formatStatNumber(s.value))}</span><span class="pss-label">${escapeHtml(s.label)}</span></div>`
+  ).join("");
+}
+
+function formatStatNumber(n) {
+  return Number.isInteger(n) ? String(n) : n.toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
 }
 
 function progressLabel() {
@@ -611,16 +651,23 @@ function renderTeams() {
         const g = mantraColorGroup(s);
         return `<span class="tp-role ${g}">${escapeHtml(s)}</span>`;
       }).join("");
+      const logoUrl = clubLogoUrlFor(p);
+      const logoImg = `<img class="tp-club-logo" src="${escapeHtml(logoUrl || "")}" alt="${escapeHtml(p.squadra || "")}" style="${logoUrl ? "" : "display:none;"}" onerror="this.style.display='none'" />`;
       return `<div class="tp-row ${grpPrincipale}" title="${escapeHtml(fullName(p))} (${formatCredits(p.price)})">
         <span class="tp-roles">${badges}</span>
+        ${logoImg}
         <span class="tp-name">${escapeHtml(fullName(p))}</span>
+        <span class="tp-price"><span class="tp-price-coin">🥇</span>${formatCredits(p.price)}</span>
       </div>`;
     }).join("");
     const online = team.id === myTeamId ? true : isTeamOnline(team);
+    const expanded = expandedTeamsOnMobile.has(team.id);
+    col.className += expanded ? " expanded" : "";
     col.innerHTML = `
       <div class="t-head">
         <span class="conn-dot${online ? " online" : ""}" title="${online ? "Collegato" : "Non collegato"}"></span>
         <span class="t-name">${escapeHtml(team.name)}</span>
+        <span class="t-expand-hint">▾</span>
       </div>
       <div class="tp-list">${rows}</div>
       <div class="t-foot">
@@ -631,7 +678,19 @@ function renderTeams() {
       </div>
       ${rs.rischioPortieri ? '<div class="t-sub t-warn">⚠ rischio portieri</div>' : ""}
     `;
-    col.onclick = () => openRosterModal(team);
+    col.onclick = () => {
+      // Su schermi stretti (smartphone) la card stessa si espande/richiude
+      // al tap, per non avere una pagina lunghissima con tutte le rose di
+      // 10 squadre aperte insieme. Su schermi larghi il tap apre invece la
+      // modale con la rosa completa, come prima.
+      if (isMobileTeamsLayout()) {
+        if (expandedTeamsOnMobile.has(team.id)) expandedTeamsOnMobile.delete(team.id);
+        else expandedTeamsOnMobile.add(team.id);
+        renderTeams();
+      } else {
+        openRosterModal(team);
+      }
+    };
     grid.appendChild(col);
   }
   const total = names.length;
@@ -1282,6 +1341,122 @@ $("manualPlayerResults").addEventListener("click", (e) => {
 });
 $("manualPlayerSearch").addEventListener("focus", () => {
   if (selectedManualPlayerId) { selectedManualPlayerId = null; $("manualPlayerSearch").value = ""; }
+});
+
+// ---------------------------------------------------------------------------
+// Storico chiamate: a differenza di "↩️ Annulla ultima" (che disfa SOLO
+// l'ultima vendita conclusa), questo pannello elenca TUTTI i calciatori già
+// risolti (assegnati o passati senza offerte) e permette di intervenire su
+// uno QUALSIASI di essi, non solo l'ultimo — utile per correggere un errore
+// notato più tardi nel corso dell'asta. Include anche, col filtro dedicato,
+// i calciatori mai chiamati per errore (restano "disponibili" ma il loro
+// turno nell'ordine di chiamata è già passato), così si possono assegnare
+// subito senza dover indovinare il nome giusto nella ricerca qui sopra.
+$("historySearch").addEventListener("input", renderHistoryList);
+$("historyFilterSelect").addEventListener("change", renderHistoryList);
+
+function historyStatusLabel(p) {
+  if (p.status === "assigned") return "assegnato";
+  if (p.status === "skipped") return "passato (nessuna offerta)";
+  if (p.status === "available") return "mai chiamato";
+  if (p.status === "called") return "in asta ora";
+  return p.status;
+}
+
+function renderHistoryList() {
+  const wrap = $("historyList");
+  if (!wrap || !isAdminUser) return;
+  const q = ($("historySearch").value || "").trim().toLowerCase();
+  const filter = $("historyFilterSelect").value;
+  const drawOrder = config?.drawOrder || [];
+  const nextIndex = state?.nextIndex || 0;
+
+  let list = [...playersById.values()].filter((p) => p.status !== "called");
+  if (filter === "assigned") {
+    list = list.filter((p) => p.status === "assigned");
+  } else if (filter === "skipped") {
+    // "Passati/mai chiamati": sia chi è stato segnato esplicitamente come
+    // senza offerte, sia chi risulta ancora disponibile ma il cui turno
+    // nell'ordine di chiamata è già superato (chiamato erroneamente mai).
+    list = list.filter((p) => {
+      if (p.status === "skipped") return true;
+      if (p.status === "available") {
+        const idx = drawOrder.indexOf(p.id);
+        return idx !== -1 && idx < nextIndex;
+      }
+      return false;
+    });
+  } else if (filter === "resolved") {
+    list = list.filter((p) => p.status === "assigned" || p.status === "skipped");
+  }
+  // "all": nessun filtro di stato aggiuntivo.
+
+  if (q) {
+    list = list.filter((p) => (p.cognome || "").toLowerCase().includes(q) || (p.nome || "").toLowerCase().includes(q));
+  }
+
+  // Più recenti prima: usiamo la posizione nel drawOrder come proxy
+  // dell'ordine di chiamata (chi ha un indice più alto è stato chiamato
+  // dopo). I calciatori senza indice (non nel drawOrder attuale) finiscono
+  // in fondo.
+  list.sort((a, b) => {
+    const ia = drawOrder.indexOf(a.id); const ib = drawOrder.indexOf(b.id);
+    if (ia === -1 && ib === -1) return fullName(a).localeCompare(fullName(b), "it");
+    if (ia === -1) return 1;
+    if (ib === -1) return -1;
+    return ib - ia;
+  });
+  list = list.slice(0, 200);
+
+  if (!list.length) { wrap.innerHTML = '<p class="small">Nessun calciatore trovato.</p>'; return; }
+
+  wrap.innerHTML = list.map((p) => {
+    const teamName = p.assignedTeam ? (teamsById.get(p.assignedTeam)?.name || p.assignedTeam) : "";
+    const detail = p.status === "assigned"
+      ? `→ ${escapeHtml(teamName)} (${formatCredits(p.price)})`
+      : historyStatusLabel(p);
+    return `<div class="roster-row" data-player="${p.id}">
+      <span class="rr-role ${ROLE_CLASS[p.ruolo] || ""}">${ROLE_SHORT[p.ruolo] || ""}</span>
+      <span class="rr-name">${escapeHtml(fullName(p))} <span class="small">(${escapeHtml(p.squadra || "")}) — ${escapeHtml(detail)}</span></span>
+      <span class="row" style="gap:4px; flex:0 0 auto; flex-wrap:nowrap;">
+        ${p.status === "assigned" ? `<button class="btn ghost btn-sm" data-action="history-reopen" data-player="${p.id}" title="Annulla questa assegnazione e rimetti il giocatore disponibile">↩️ Riapri</button>` : ""}
+        <button class="btn ghost btn-sm" data-action="history-reassign" data-player="${p.id}" title="Apri questo calciatore nel box di assegnazione manuale qui sopra">✏️ Riassegna</button>
+      </span>
+    </div>`;
+  }).join("");
+}
+
+$("historyList").addEventListener("click", async (e) => {
+  const reopenBtn = e.target.closest('[data-action="history-reopen"]');
+  const reassignBtn = e.target.closest('[data-action="history-reassign"]');
+  if (reopenBtn) {
+    const playerId = reopenBtn.dataset.player;
+    const p = playersById.get(playerId);
+    if (!p) return;
+    const teamName = p.assignedTeam ? (teamsById.get(p.assignedTeam)?.name || p.assignedTeam) : "";
+    if (!confirm(`Annullare l'assegnazione di ${fullName(p)} a ${teamName}? Il giocatore tornerà disponibile e i crediti verranno restituiti alla squadra.`)) return;
+    try {
+      await unassignPlayer(playerId);
+    } catch (err) {
+      alert("Errore durante l'annullamento: " + err.message);
+    }
+    return;
+  }
+  if (reassignBtn) {
+    const playerId = reassignBtn.dataset.player;
+    const p = playersById.get(playerId);
+    if (!p) return;
+    $("manualPlayerSearch").scrollIntoView({ behavior: "smooth", block: "center" });
+    // Il listener "focus" su questo campo azzera la selezione corrente (per
+    // permettere di scrivere una nuova ricerca da capo quando si clicca sul
+    // campo a mano): la impostiamo quindi DOPO aver dato il focus, non prima,
+    // altrimenti verrebbe cancellata subito dal listener stesso.
+    $("manualPlayerSearch").focus();
+    selectedManualPlayerId = playerId;
+    $("manualPlayerSearch").value = fullName(p);
+    $("manualPlayerResults").innerHTML = "";
+    $("manualPriceInput").value = p.price ?? "";
+  }
 });
 
 $("btnManualAssign").onclick = async () => {
