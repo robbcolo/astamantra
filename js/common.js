@@ -151,9 +151,14 @@ export function escapeHtml(s) {
 }
 
 // ----------------------------------------------------------------------------
-// Parsing CSV listone (stesso formato del programma desktop:
-// ruolo,cognome,nome,squadra,quotazione,ruolo_mantra — ordine colonne libero,
-// cerca per nome come converti_listone.py)
+// Parsing CSV listone. Riconosce DUE formati, per nome di colonna (ordine
+// libero, come converti_listone.py):
+//  1) formato "semplice" del programma desktop:
+//     ruolo,cognome,nome,squadra,quotazione,ruolo_mantra
+//  2) formato "ufficiale" export svincolati/listone:
+//     #,Nome,Fuori lista,Sq.,Under,R.,R.MANTRA,PGv,MV,FM,FVM/1000,QUOT.,FantaSquadra,Costo
+//     (qui "Nome" è già il nominativo intero da mostrare, non c'è "cognome"
+//     separato; le righe marcate "Fuori lista" vengono escluse)
 // ----------------------------------------------------------------------------
 
 export function parseListoneCsv(text) {
@@ -169,16 +174,22 @@ export function parseListoneCsv(text) {
     return -1;
   };
 
-  const iRuolo = idx(["ruolo"]);
-  const iCognome = idx(["cognome"]);
-  const iNome = idx(["nome"]);
-  const iSquadra = idx(["squadra"]);
-  const iQuot = idx(["quotazione", "qt.a", "quota"]);
-  const iMantra = idx(["ruolo_mantra", "ruolomantra", "mantra"]);
+  const iRuolo = idx(["ruolo", "r.", "r"]);
+  let iCognome = idx(["cognome"]);
+  let iNome = idx(["nome"]);
+  if (iCognome === -1 && iNome !== -1) {
+    // formato ufficiale: un'unica colonna "Nome" fa da nominativo completo.
+    iCognome = iNome;
+    iNome = -1;
+  }
+  const iSquadra = idx(["squadra", "sq."]);
+  const iQuot = idx(["quotazione", "qt.a", "quota", "quot."]);
+  const iMantra = idx(["ruolo_mantra", "ruolomantra", "mantra", "r.mantra"]);
+  const iFuoriLista = idx(["fuori lista", "fuorilista"]);
 
   const errors = [];
   if (iRuolo === -1 || iCognome === -1) {
-    errors.push("Intestazione non riconosciuta: servono almeno le colonne 'ruolo' e 'cognome'.");
+    errors.push("Intestazione non riconosciuta: servono almeno le colonne ruolo/R. e cognome/Nome.");
     return { players: [], errors };
   }
 
@@ -190,9 +201,11 @@ export function parseListoneCsv(text) {
   };
 
   const players = [];
+  let excluded = 0;
   for (let r = 1; r < rows.length; r++) {
     const row = rows[r];
     if (!row || row.every((c) => String(c).trim() === "")) continue;
+    if (iFuoriLista !== -1 && String(row[iFuoriLista] ?? "").trim() !== "") { excluded++; continue; }
     const ruoloRaw = String(row[iRuolo] ?? "").trim().toLowerCase();
     const ruolo = ROLE_MAP[ruoloRaw];
     const cognome = String(row[iCognome] ?? "").trim();
@@ -210,7 +223,7 @@ export function parseListoneCsv(text) {
     });
   }
   if (players.length === 0) errors.push("Nessun calciatore valido trovato nel file.");
-  return { players, errors };
+  return { players, errors, excluded };
 }
 
 /** Parser CSV minimale ma robusto a virgolette e virgole dentro ai campi. */
@@ -280,6 +293,36 @@ function csvEscape(v) {
   const s = String(v ?? "");
   if (/[",\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
   return s;
+}
+
+/**
+ * Rete di sicurezza: se dopo qualche secondo la pagina non ha ancora
+ * ricevuto risposta da Firebase (schermata bloccata su "collegamento…"),
+ * mostra un avviso comprensibile invece di restare muta. `isReadyFn` deve
+ * restituire true non appena la pagina ha una risposta (anche di errore).
+ */
+export function armStuckWatchdog(isReadyFn, extraHintsHtml = "") {
+  setTimeout(() => {
+    if (isReadyFn()) return;
+    const topbar = document.querySelector(".topbar");
+    if (!topbar || document.getElementById("ffStuckWarning")) return;
+    const div = document.createElement("div");
+    div.id = "ffStuckWarning";
+    div.className = "card";
+    div.style.borderColor = "var(--danger)";
+    div.innerHTML = `
+      <h3 style="color:var(--danger); margin-top:0;">⚠ La pagina non riesce a collegarsi</h3>
+      <p>Sono passati diversi secondi senza risposta da Firebase. Controlla, in ordine:</p>
+      <ol style="padding-left:20px; margin:8px 0;">
+        <li>Stai aprendo l'indirizzo <strong>pubblico</strong> del sito (es. <code>https://tuonome.github.io/tuorepo/</code>) e non un file aperto direttamente dal computer, né la pagina del file su github.com?</li>
+        <li>Nel progetto Firebase, <strong>Firestore Database</strong> è stato creato (Build → Firestore Database)?</li>
+        ${extraHintsHtml}
+        <li>Il file <code>js/firebase-config.js</code> pubblicato online contiene i tuoi valori veri (non più "INCOLLA_QUI…")?</li>
+      </ol>
+      <p class="small">Se tutto questo è a posto, apri la Console del browser (tasto destro sulla pagina → "Ispeziona" → scheda "Console") e guarda se compare una scritta rossa: quel testo dice esattamente cosa non va.</p>
+    `;
+    topbar.after(div);
+  }, 7000);
 }
 
 export function downloadTextFile(filename, text, mime = "text/csv;charset=utf-8") {
