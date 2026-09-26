@@ -257,8 +257,14 @@ function renderStage() {
 
   if (showPlayer && currentPlayer) {
     const badge = $("playerRoleBadge");
-    badge.textContent = `${ROLE_ICON[currentPlayer.ruolo] || ""} ${currentPlayer.ruolo}${currentPlayer.ruoloMantra ? " · " + currentPlayer.ruoloMantra : ""}`;
-    badge.className = "role-badge " + (ROLE_CLASS[currentPlayer.ruolo] || "");
+    // Un badge colorato per ciascuna sigla Mantra del calciatore (es. un
+    // centrocampista/trequartista mostra un chip C blu E un chip T viola
+    // affiancati), non un colore unico per il macro-ruolo.
+    const sigle = mantraRoles(currentPlayer);
+    badge.innerHTML = sigle.map((s) => {
+      const g = mantraColorGroup(s);
+      return `<span class="role-badge-chip ${g}">${escapeHtml(s)}</span>`;
+    }).join("") + `<span class="role-badge-label">${escapeHtml(currentPlayer.ruolo)}</span>`;
     const photo = $("playerPhoto");
     photo.className = "player-photo " + (ROLE_CLASS[currentPlayer.ruolo] || "");
     if (lastPhotoPlayerId !== currentPlayer.id) {
@@ -298,12 +304,10 @@ setInterval(() => {
 // Render: le mie info + pulsanti di rilancio
 // ---------------------------------------------------------------------------
 function renderMyTeam() {
-  const team = teamsById.get(myTeamId);
-  if (!team) return;
-  $("myTeamName").textContent = team.name;
-  const el = $("myTeamCredits");
-  el.textContent = formatCredits(team.credits);
-  el.style.color = creditColor(team.credits, config?.budget || DEFAULT_CONFIG.budget);
+  // La card "La tua squadra / Crediti residui" è stata rimossa dalla vista
+  // live su richiesta: i crediti di TUTTE le squadre (compresa la propria)
+  // si vedono ora nel riepilogo compatto accanto allo stage
+  // (renderCreditsSummary) e nella griglia "Squadre" più sotto.
 }
 
 function renderBidButtons() {
@@ -438,6 +442,25 @@ function renderTeams() {
   }
   const total = names.length;
   $("progressBadge").textContent = state ? progressLabel() : `${total} squadre`;
+  renderCreditsSummary(names, budget);
+}
+
+/** Riepilogo compatto dei crediti di TUTTE le squadre, mostrato accanto allo
+ * stage del calciatore in asta (sostituisce la vecchia card "La tua squadra
+ * / Crediti residui", che mostrava solo i propri). Ordinato per crediti
+ * residui decrescenti, così si vede subito chi può ancora spendere di più. */
+function renderCreditsSummary(names, budget) {
+  const list = $("creditsSummaryList");
+  if (!list) return;
+  const sorted = names.slice().sort((a, b) => (b.credits ?? 0) - (a.credits ?? 0));
+  list.innerHTML = sorted.map((team) => {
+    const isMe = team.id === myTeamId;
+    const isLeading = state && state.currentBidTeam === team.id;
+    return `<div class="cs-row${isMe ? " me" : ""}${isLeading ? " leading" : ""}">
+      <span class="cs-name">${escapeHtml(team.name)}</span>
+      <span class="cs-credits" style="color:${creditColor(team.credits, budget)}">${formatCredits(team.credits)}</span>
+    </div>`;
+  }).join("");
 }
 
 function openRosterModal(team) {
@@ -463,15 +486,9 @@ $("rosterModalBackdrop").addEventListener("click", (e) => {
 });
 
 function renderTicker() {
-  const wrap = $("ticker");
-  const log = state?.salesLog || [];
-  if (!log.length) { wrap.innerHTML = '<span class="small">Nessuna ancora.</span>'; return; }
-  wrap.innerHTML = "";
-  for (const entry of log) {
-    const line = document.createElement("span");
-    line.textContent = `${ROLE_SHORT[entry.ruolo] || ""} ${entry.playerName} → ${entry.teamName} (${formatCredits(entry.price)})`;
-    wrap.appendChild(line);
-  }
+  // Sezione "Ultime assegnazioni" rimossa dalla vista live su richiesta.
+  // Funzione lasciata come no-op innocuo per non dover toccare i punti che
+  // la richiamano dopo ogni cambiamento di stato.
 }
 
 // ============================================================================

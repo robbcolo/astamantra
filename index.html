@@ -26,19 +26,19 @@
        stando nella stessa vista in cui bida come chiunque altro. Solo
        configurazione/correzioni/esportazione vivono nel pannello impostazioni
        qui sotto (⚙️), che è tutt'altra cosa dalla conduzione live. -->
-  <div id="adminBar" class="card hidden" style="border-color:var(--accent);">
-    <div class="row between">
-      <strong>🎛️ Conduzione asta (admin)</strong>
-      <span class="pill" id="adminStatusPill">stato: —</span>
+  <div id="adminBar" class="card admin-bar-mini hidden" style="border-color:var(--accent);">
+    <div class="ab-row">
+      <strong class="ab-title">🎛️ Admin</strong>
+      <span class="pill ab-status" id="adminStatusPill">stato: —</span>
+      <button id="btnNext" class="btn primary ab-next">🎲 Chiama il prossimo</button>
     </div>
-    <button id="btnNext" class="btn primary block big mt">🎲 Chiama il prossimo giocatore</button>
-    <div class="icon-toolbar mt">
+    <div class="icon-toolbar mini">
       <button id="btnManualBid" class="icon-btn accent">🖐️ Rilancio manuale</button>
       <button id="btnAssignNow" class="icon-btn">✅ Assegna ora</button>
       <button id="btnMarkUnsold" class="icon-btn">🚫 Nessuna offerta</button>
       <button id="btnCancelCall" class="icon-btn warn">❌ Annulla chiamata</button>
       <button id="btnPause" class="icon-btn">⏸ Pausa</button>
-      <button id="btnUndo" class="icon-btn danger">↩️ Annulla ultima assegnazione</button>
+      <button id="btnUndo" class="icon-btn danger">↩️ Annulla ultima</button>
       <button id="btnToggleAdvanced" class="icon-btn">⚙️ Impostazioni ▾</button>
     </div>
   </div>
@@ -130,68 +130,59 @@ Squadra 2
   <!-- ============ VISTA LIVE ============ -->
   <div id="liveView" class="hidden">
 
-    <div class="card row between">
-      <div>
-        <div class="small">La tua squadra</div>
-        <div style="font-size:1.3rem; font-weight:800;" id="myTeamName">—</div>
-      </div>
-      <div style="text-align:right;">
-        <div class="small">Crediti residui</div>
-        <div style="font-size:1.7rem; font-weight:900;" id="myTeamCredits">—</div>
-      </div>
-    </div>
-
     <div id="statusBanner" class="status-banner idle hidden"></div>
 
-    <div class="stage">
-      <div id="stageEmpty" class="hidden">
-        <h2>In attesa del prossimo giocatore…</h2>
-        <p class="player-meta" id="progressText"></p>
-      </div>
-      <div id="stageFinished" class="hidden">
-        <h2>🏁 Asta terminata!</h2>
-        <p class="player-meta">Tutti i calciatori del listone sono stati chiamati.</p>
-      </div>
-      <div id="stagePlayer" class="hidden">
-        <div class="player-photo-wrap">
-          <img id="playerPhoto" class="player-photo" alt="" />
+    <div class="live-top">
+      <div class="stage">
+        <div id="stageEmpty" class="hidden">
+          <h2>In attesa del prossimo giocatore…</h2>
+          <p class="player-meta" id="progressText"></p>
         </div>
-        <span id="playerRoleBadge" class="role-badge"></span>
-        <div class="player-name" id="playerName">—</div>
-        <div class="player-meta" id="playerMeta">—</div>
-
-        <div class="bid-display">
-          <div class="bid-amount-wrap">
-            <span class="bid-coin">🪙</span>
-            <div>
-              <div class="bid-amount" id="currentBid">0</div>
-              <div class="bid-team" id="currentBidTeam">Nessuna offerta</div>
-            </div>
+        <div id="stageFinished" class="hidden">
+          <h2>🏁 Asta terminata!</h2>
+          <p class="player-meta">Tutti i calciatori del listone sono stati chiamati.</p>
+        </div>
+        <div id="stagePlayer" class="hidden">
+          <div class="player-photo-wrap">
+            <img id="playerPhoto" class="player-photo" alt="" />
           </div>
-          <div id="timerRing" class="timer-ring ok">⏳ —</div>
-        </div>
+          <span id="playerRoleBadge" class="role-badge-group"></span>
+          <div class="player-name" id="playerName">—</div>
+          <div class="player-meta" id="playerMeta">—</div>
 
-        <div class="bid-buttons" id="bidButtons">
-          <button class="btn primary" data-delta="1">+1</button>
-          <button class="btn primary" data-delta="5">+5</button>
-          <button class="btn primary" data-delta="10">+10</button>
-          <button class="btn" id="btnAltro">Altro…</button>
+          <div class="bid-display">
+            <div class="bid-amount-wrap">
+              <span class="bid-coin">🪙</span>
+              <div>
+                <div class="bid-amount" id="currentBid">0</div>
+                <div class="bid-team" id="currentBidTeam">Nessuna offerta</div>
+              </div>
+            </div>
+            <div id="timerRing" class="timer-ring ok">⏳ —</div>
+          </div>
+
+          <div class="bid-buttons" id="bidButtons">
+            <button class="btn primary" data-delta="1">+1</button>
+            <button class="btn primary" data-delta="5">+5</button>
+            <button class="btn primary" data-delta="10">+10</button>
+            <button class="btn" id="btnAltro">Altro…</button>
+          </div>
+          <p id="bidError" class="small" style="color:var(--danger); min-height:1.2em; margin-top:10px;"></p>
         </div>
-        <p id="bidError" class="small" style="color:var(--danger); min-height:1.2em; margin-top:10px;"></p>
+      </div>
+
+      <div class="credits-summary">
+        <div class="cs-head">
+          <h4>Crediti squadre</h4>
+          <span class="badge-count" id="progressBadge"></span>
+        </div>
+        <div id="creditsSummaryList" class="cs-list"></div>
       </div>
     </div>
 
     <div class="card">
-      <div class="row between">
-        <h3>Squadre</h3>
-        <span class="badge-count" id="progressBadge"></span>
-      </div>
+      <h3>Squadre</h3>
       <div class="teams-grid" id="teamsGrid"></div>
-    </div>
-
-    <div class="card">
-      <h3>Ultime assegnazioni</h3>
-      <div class="ticker" id="ticker"><span class="small">Nessuna ancora.</span></div>
     </div>
 
   </div>

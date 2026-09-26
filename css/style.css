@@ -15,8 +15,8 @@
   --danger: #ef4557;
   --gold: #f0c53b;
   --role-p: #f0c53b;
-  --role-d: #4f8cff;
-  --role-c: #33d17a;
+  --role-d: #33d17a;
+  --role-c: #4f8cff;
   --role-a: #ef4557;
   --radius: 18px;
   --radius-sm: 12px;
@@ -43,9 +43,9 @@ body {
 h1, h2, h3 { margin: 0 0 0.4em 0; }
 
 .wrap {
-  max-width: 1120px;
+  max-width: 1920px;
   margin: 0 auto;
-  padding: 14px 14px 60px 14px;
+  padding: 14px 20px 40px 20px;
 }
 
 .topbar {
@@ -127,15 +127,70 @@ label { font-size: 0.85rem; color: var(--text-dim); display: block; margin: 10px
 .icon-btn.warn { background: rgba(240,185,59,0.16); border-color: rgba(240,185,59,0.5); color: #ffd67a; }
 .icon-btn.accent { background: rgba(124,92,255,0.20); border-color: rgba(124,92,255,0.55); color: #c9bcff; }
 
+/* ---------------- Pannello admin "Conduzione asta" — versione mini ---------------- */
+.admin-bar-mini { padding: 10px 12px; }
+.ab-row {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.ab-title { font-size: 0.9rem; white-space: nowrap; }
+.ab-status { font-size: 0.72rem; padding: 3px 10px; }
+.ab-next {
+  margin-left: auto;
+  padding: 8px 16px; font-size: 0.88rem; border-radius: 999px;
+}
+.icon-toolbar.mini {
+  gap: 5px; margin-bottom: 0; justify-content: flex-start;
+}
+.icon-toolbar.mini .icon-btn {
+  padding: 5px 10px; font-size: 0.72rem;
+}
+
+/* ---------------- Vista live: stage + riepilogo crediti affiancati ---------------- */
+.live-top {
+  display: grid;
+  grid-template-columns: minmax(0, 2.2fr) minmax(200px, 1fr);
+  gap: 12px;
+  align-items: start;
+  margin-bottom: 14px;
+}
+@media (max-width: 860px) {
+  .live-top { grid-template-columns: 1fr; }
+}
+.credits-summary {
+  background: linear-gradient(180deg, var(--panel), var(--panel) 100%);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+  max-height: 480px;
+  overflow-y: auto;
+}
+.cs-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 8px;
+}
+.cs-head h4 { margin: 0; font-size: 0.85rem; color: var(--text-dim); }
+.cs-list { display: flex; flex-direction: column; gap: 3px; }
+.cs-row {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px; padding: 5px 8px; border-radius: 8px;
+  font-size: 0.82rem;
+  background: var(--panel-2);
+}
+.cs-row.me { box-shadow: 0 0 0 1px var(--accent) inset; }
+.cs-row.leading { box-shadow: 0 0 0 1px var(--ok) inset; }
+.cs-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cs-credits { font-weight: 800; }
+
 /* ---------------- Stage: giocatore in asta ---------------- */
 
 .stage {
   border-radius: var(--radius);
   background: linear-gradient(160deg, #241c52, #150f30 70%);
   border: 1px solid var(--border);
-  padding: 22px;
+  padding: 14px 16px;
   text-align: center;
-  margin-bottom: 16px;
+  margin-bottom: 0;
   position: relative;
   overflow: hidden;
 }
@@ -145,16 +200,16 @@ label { font-size: 0.85rem; color: var(--text-dim); display: block; margin: 10px
 }
 .stage > * { position: relative; }
 
-.player-photo-wrap { display: flex; justify-content: center; margin-bottom: 12px; }
+.player-photo-wrap { display: flex; justify-content: center; margin-bottom: 6px; }
 .player-photo {
-  width: 96px; height: 96px; border-radius: 50%;
+  width: 60px; height: 60px; border-radius: 50%;
   object-fit: cover; background: var(--panel-3);
-  border: 3px solid var(--accent);
-  box-shadow: 0 0 0 4px rgba(124,92,255,0.18);
+  border: 2px solid var(--accent);
+  box-shadow: 0 0 0 3px rgba(124,92,255,0.18);
 }
 .player-photo.role-p { border-color: var(--role-p); box-shadow: 0 0 0 4px rgba(240,197,59,0.18); }
-.player-photo.role-d { border-color: var(--role-d); box-shadow: 0 0 0 4px rgba(79,140,255,0.18); }
-.player-photo.role-c { border-color: var(--role-c); box-shadow: 0 0 0 4px rgba(51,209,122,0.18); }
+.player-photo.role-d { border-color: var(--role-d); box-shadow: 0 0 0 4px rgba(51,209,122,0.18); }
+.player-photo.role-c { border-color: var(--role-c); box-shadow: 0 0 0 4px rgba(79,140,255,0.18); }
 .player-photo.role-a { border-color: var(--role-a); box-shadow: 0 0 0 4px rgba(239,69,87,0.18); }
 
 .stage .role-badge {
@@ -163,38 +218,58 @@ label { font-size: 0.85rem; color: var(--text-dim); display: block; margin: 10px
   padding: 6px 16px; border-radius: 999px;
   margin-bottom: 10px;
 }
+/* Gruppo di badge sullo stage: un chip colorato per OGNI sigla Mantra del
+   calciatore (es. C blu + T viola affiancati per un centrocampista/trequartista),
+   più un'etichetta col macro-ruolo esteso. */
+.role-badge-group {
+  display: inline-flex; align-items: center; gap: 5px;
+  margin-bottom: 4px;
+}
+.role-badge-chip {
+  font-weight: 800; font-size: 0.68rem;
+  padding: 2px 7px; border-radius: 999px;
+}
+.role-badge-chip.mp { background: var(--mp-bg); color: var(--mp-fg); }
+.role-badge-chip.md { background: var(--md-bg); color: var(--md-fg); }
+.role-badge-chip.mc { background: var(--mc-bg); color: var(--mc-fg); }
+.role-badge-chip.mq { background: var(--mq-bg); color: var(--mq-fg); }
+.role-badge-chip.ma { background: var(--ma-bg); color: var(--ma-fg); }
+.role-badge-label {
+  font-weight: 600; font-size: 0.68rem; color: var(--text-dim);
+  padding: 2px 2px;
+}
 .stage .player-name {
-  font-size: clamp(1.6rem, 6vw, 2.6rem);
+  font-size: clamp(1.15rem, 3vw, 1.6rem);
   font-weight: 800;
   line-height: 1.1;
-  margin: 4px 0 6px 0;
+  margin: 2px 0 3px 0;
   word-break: break-word;
 }
-.stage .player-meta { color: var(--text-dim); font-size: 1rem; margin-bottom: 18px; }
+.stage .player-meta { color: var(--text-dim); font-size: 0.78rem; margin-bottom: 8px; }
 
 .bid-display {
-  display: flex; align-items: center; justify-content: center; gap: 26px;
+  display: flex; align-items: center; justify-content: center; gap: 14px;
   flex-wrap: wrap;
-  margin: 10px 0 18px 0;
+  margin: 6px 0 10px 0;
 }
-.bid-amount-wrap { display: flex; align-items: center; justify-content: center; gap: 8px; }
+.bid-amount-wrap { display: flex; align-items: center; justify-content: center; gap: 6px; }
 .bid-amount {
-  font-size: clamp(2.4rem, 10vw, 4.2rem);
+  font-size: clamp(1.5rem, 4vw, 2.2rem);
   font-weight: 900;
   background: linear-gradient(135deg, #fff, #d8cfff);
   -webkit-background-clip: text; background-clip: text; color: transparent;
   line-height: 1;
 }
-.bid-coin { font-size: clamp(1.4rem, 5vw, 2.2rem); }
+.bid-coin { font-size: clamp(1rem, 2.5vw, 1.3rem); }
 .bid-team {
-  font-size: 1.05rem;
+  font-size: 0.8rem;
   color: #c9bcff;
   font-weight: 700;
 }
 .timer-ring {
-  font-size: clamp(1.6rem, 6vw, 2.3rem);
+  font-size: clamp(1rem, 3vw, 1.3rem);
   font-weight: 900;
-  min-width: 2.4em; height: 1.7em;
+  min-width: 2.2em; height: 1.5em;
   display: flex; align-items: center; justify-content: center; gap: 4px;
   border-radius: 999px;
   border: none;
@@ -206,8 +281,8 @@ label { font-size: 0.85rem; color: var(--text-dim); display: block; margin: 10px
 .timer-ring.ok { color: #9fe6bd; box-shadow: inset 0 0 0 2px var(--ok); }
 @keyframes pulse { 0%,100% { transform: scale(1);} 50% { transform: scale(1.06);} }
 
-.bid-buttons { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
-.bid-buttons .btn { min-width: 84px; }
+.bid-buttons { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.bid-buttons .btn { min-width: 64px; padding: 8px 12px; font-size: 0.85rem; }
 .bid-buttons .btn[data-delta="1"] { background: linear-gradient(135deg, #4f8cff, #6f6bff); border-color: transparent; color: #fff; }
 .bid-buttons .btn[data-delta="5"] { background: linear-gradient(135deg, #a25cf0, #c04fd6); border-color: transparent; color: #fff; }
 .bid-buttons .btn[data-delta="10"] { background: linear-gradient(135deg, #7c5cff, #4f2fd6); border-color: transparent; color: #fff; }
@@ -226,8 +301,8 @@ label { font-size: 0.85rem; color: var(--text-dim); display: block; margin: 10px
 .role-c { color: var(--role-c); }
 .role-a { color: var(--role-a); }
 .role-badge.role-p { background: rgba(240,197,59,0.18); }
-.role-badge.role-d { background: rgba(79,140,255,0.18); }
-.role-badge.role-c { background: rgba(51,209,122,0.18); }
+.role-badge.role-d { background: rgba(51,209,122,0.18); }
+.role-badge.role-c { background: rgba(79,140,255,0.18); }
 .role-badge.role-a { background: rgba(239,69,87,0.18); }
 
 .role-chip {
@@ -237,8 +312,8 @@ label { font-size: 0.85rem; color: var(--text-dim); display: block; margin: 10px
   white-space: nowrap;
 }
 .role-chip.role-p { background: rgba(240,197,59,0.22); color: #ffd76a; }
-.role-chip.role-d { background: rgba(79,140,255,0.22); color: #8fb4ff; }
-.role-chip.role-c { background: rgba(51,209,122,0.22); color: #7cedac; }
+.role-chip.role-d { background: rgba(51,209,122,0.22); color: #7cedac; }
+.role-chip.role-c { background: rgba(79,140,255,0.22); color: #8fb4ff; }
 .role-chip.role-a { background: rgba(239,69,87,0.22); color: #ff8a97; }
 
 /* ---------------- Squadre / board rose ---------------- */
@@ -259,18 +334,19 @@ label { font-size: 0.85rem; color: var(--text-dim); display: block; margin: 10px
 
 .teams-grid {
   display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(128px, 1fr);
-  gap: 6px;
-  overflow-x: auto;
-  padding-bottom: 2px;
+  /* Tante colonne quante servono per riempire la riga, MAI più strette di
+     150px: con lo schermo a tutta larghezza, 10 squadre stanno affiancate
+     senza bisogno di scorrimento orizzontale. Se davvero non entrano tutte
+     (schermi stretti), la riga va a capo invece di scorrere. */
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 8px;
   align-items: start;
 }
 .team-col {
   background: var(--panel-2);
   border: 2px solid var(--border);
   border-radius: var(--radius-sm);
-  padding: 6px 6px 8px;
+  padding: 8px 9px 10px;
   cursor: pointer;
   transition: border-color .15s ease;
   display: flex;
@@ -280,30 +356,30 @@ label { font-size: 0.85rem; color: var(--text-dim); display: block; margin: 10px
 .team-col:hover { border-color: var(--accent); }
 .team-col.me { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
 .team-col.leading { border-color: var(--ok); box-shadow: 0 0 0 1px var(--ok) inset; }
-.t-head { margin-bottom: 4px; }
+.t-head { margin-bottom: 6px; }
 .team-col .t-name {
-  font-weight: 700; font-size: 0.72rem; line-height: 1.15;
+  font-weight: 700; font-size: 0.92rem; line-height: 1.15;
   display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.tp-list { display: flex; flex-direction: column; gap: 1px; }
+.tp-list { display: flex; flex-direction: column; gap: 2px; }
 .tp-row {
   display: grid;
-  grid-template-columns: minmax(16px, max-content) 1fr;
+  grid-template-columns: minmax(20px, max-content) 1fr;
   align-items: center;
-  gap: 4px;
-  padding: 1px 2px;
-  border-radius: 3px;
-  font-size: 0.66rem;
-  line-height: 1.25;
+  gap: 5px;
+  padding: 2px 3px;
+  border-radius: 4px;
+  font-size: 0.82rem;
+  line-height: 1.3;
 }
 .tp-roles { display: flex; gap: 2px; }
 .tp-role {
-  font-size: 0.58rem;
+  font-size: 0.7rem;
   font-weight: 800;
   text-align: center;
-  border-radius: 3px;
-  padding: 0 1px;
-  min-width: 14px;
+  border-radius: 4px;
+  padding: 1px 2px;
+  min-width: 18px;
 }
 .tp-role.mp, .tp-row.mp { background: var(--mp-bg); }
 .tp-role.mp { color: var(--mp-fg); }
@@ -320,25 +396,25 @@ label { font-size: 0.85rem; color: var(--text-dim); display: block; margin: 10px
   color: var(--text);
 }
 .t-foot {
-  margin-top: 6px;
-  padding-top: 5px;
+  margin-top: 8px;
+  padding-top: 7px;
   border-top: 1px solid var(--border);
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 3px;
-  font-size: 0.62rem;
+  gap: 5px;
+  font-size: 0.8rem;
 }
 .t-foot-chip {
   border-radius: 999px;
-  padding: 1px 5px;
+  padding: 2px 8px;
   font-weight: 700;
 }
 .t-foot-chip.mp { background: var(--mp-bg); color: var(--mp-fg); }
 .t-foot-chip.mov { background: var(--md-bg); color: var(--md-fg); }
-.t-foot-budget { font-weight: 800; font-size: 0.72rem; margin-left: auto; }
-.t-foot-max { width: 100%; color: var(--text-dim); font-weight: 600; }
-.team-col .t-sub { font-size: 0.62rem; color: var(--text-dim); margin-top: 3px; }
+.t-foot-budget { font-weight: 800; font-size: 0.95rem; margin-left: auto; }
+.t-foot-max { width: 100%; color: var(--text-dim); font-weight: 600; font-size: 0.78rem; }
+.team-col .t-sub { font-size: 0.75rem; color: var(--text-dim); margin-top: 4px; }
 .team-col .t-warn { color: var(--danger); font-weight: 700; }
 
 .roster-list { max-height: 50vh; overflow-y: auto; }
