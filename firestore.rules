@@ -78,6 +78,17 @@ service cloud.firestore {
     function isValidBid() {
       let incoming = request.resource.data;
       let current  = resource.data;
+      let team = get(/databases/$(database)/documents/teams/$(incoming.currentBidTeam)).data;
+      let cfg = get(/databases/$(database)/documents/config/public).data;
+      let rules = cfg.rosterRules;
+      let player = get(/databases/$(database)/documents/players/$(current.currentPlayerId)).data;
+      let roster = team.roster;
+      let totale = roster.size();
+      // Nota: non possiamo contare "quanti Portiere" con una list comprehension
+      // nelle security rules, quindi il limite sui portieri viene applicato
+      // solo quando il calciatore in asta è proprio un portiere (per gli
+      // altri ruoli conta solo il tetto sul totale rosa).
+      let portieriRoster = roster.filter(p => p.ruolo == "Portiere");
 
       return
         // si può rilanciare solo mentre l'asta è aperta sul giocatore corrente
@@ -93,7 +104,14 @@ service cloud.firestore {
         incoming.currentBidTeam is string &&
 
         // la squadra che rilancia deve avere credito sufficiente
-        get(/databases/$(database)/documents/teams/$(incoming.currentBidTeam)).data.credits >= incoming.currentBid &&
+        team.credits >= incoming.currentBid &&
+
+        // la rosa della squadra non deve essere già al completo per questo
+        // ruolo/totale: altrimenti non può proprio rilanciare su quel
+        // calciatore (lato client i pulsanti sono già disabilitati, questa è
+        // la stessa regola applicata anche lato server).
+        totale < rules.totaleMax &&
+        (player.ruolo != "Portiere" || portieriRoster.size() < rules.portiereMax) &&
 
         // il timer deve essere spostato in avanti (si sta resettando il countdown)
         incoming.timerEndsAt is timestamp &&
