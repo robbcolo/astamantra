@@ -1,5 +1,5 @@
 // ============================================================================
-// FantaFanta Patti — pagina UNICA (partecipante + pannello admin inline)
+// FantaMantra Patti — pagina UNICA (partecipante + pannello admin inline)
 // ============================================================================
 import {
   doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, onSnapshot,
@@ -13,11 +13,12 @@ import {
   DEFAULT_ROSTER_RULES, DEFAULT_CONFIG, slugify, fullName, formatCredits,
   creditColor, rosterStatus, escapeHtml, ringDisplay, parseListoneCsv,
   shuffle, buildLegheFantacalcioCsv, downloadTextFile, armStuckWatchdog,
-  setPlayerPhoto, mantraRoles, mantraColorGroup,
+  setPlayerPhoto, mantraRoles, mantraColorGroup, forwardPushRank,
 } from "./common.js";
 
 const $ = (id) => document.getElementById(id);
 const LS_KEY = "fantafanta_myTeam";
+const LS_SESSION_KEY = "fantafanta_sessionToken";
 
 const STATUS_LABELS = {
   setup: "da configurare", idle: "in attesa", bidding: "asta aperta",
@@ -37,6 +38,23 @@ let lastPhotoPlayerId = null; // evita di ricaricare la <img> ad ogni singolo ri
 let myTeamId = localStorage.getItem(LS_KEY);
 let unsubPlayer = null;
 let unsubPlayers = null;
+let kickedOut = false; // true se un altro dispositivo ha preso il controllo della nostra squadra
+
+// Token casuale che identifica QUESTO browser/scheda. Serve solo per la
+// regola "una persona per squadra": quando si sceglie una squadra lo si
+// scrive sul documento team come mySessionToken, e finché nessun altro
+// dispositivo lo sovrascrive quello resta "il" dispositivo di quella
+// squadra. Non è un vero login: è solo un modo leggero per accorgersi se
+// qualcun altro ha aperto la stessa squadra nel frattempo.
+function getOrCreateSessionToken() {
+  let tok = localStorage.getItem(LS_SESSION_KEY);
+  if (!tok) {
+    tok = "s" + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+    localStorage.setItem(LS_SESSION_KEY, tok);
+  }
+  return tok;
+}
+const mySessionToken = getOrCreateSessionToken();
 
 let isAdminUser = false;
 let adminSubscribed = false;
@@ -68,6 +86,13 @@ onSnapshot(doc(db, "config", "public"), (snap) => {
   setConnDot("collegato", true);
   maybePrefillSetup();
 
+  // Sottoscriviamo subito squadre/stato, anche prima che un partecipante
+  // scelga la propria squadra: ci serve teamsById già popolato (in
+  // particolare lastSeen/activeSessionToken/allowMultiple) per poter
+  // controllare, nel momento in cui preme il pulsante di una squadra, se
+  // quella squadra è già occupata da un altro dispositivo collegato.
+  ensureCoreSubscriptions();
+
   const teamNames = config.teams || [];
   if (myTeamId && teamNames.some((n) => slugify(n) === myTeamId)) {
     startLive();
@@ -88,20 +113,74 @@ onSnapshot(doc(db, "config", "public"), (snap) => {
   setConnDot("errore di collegamento", false);
 });
 
+let lastTeamNames = [];
+
 function renderTeamSelect(teamNames) {
+  lastTeamNames = teamNames;
   const wrap = $("teamSelectList");
   wrap.innerHTML = "";
   teamNames.forEach((name) => {
+    const teamId = slugify(name);
     const b = document.createElement("button");
     b.className = "btn block";
-    b.textContent = name;
-    b.onclick = () => {
-      myTeamId = slugify(name);
-      localStorage.setItem(LS_KEY, myTeamId);
-      startLive();
-    };
+    b.dataset.teamId = teamId;
+    b.onclick = () => trySelectTeam(name, teamId);
     wrap.appendChild(b);
   });
+  refreshTeamSelectOccupancy();
+}
+
+/** Aggiorna SOLO l'etichetta/stato dei pulsanti squadra già disegnati (senza
+ * ricrearli, per non perdere il focus/scroll), in base a chi risulta
+ * collegato in questo momento su ciascuna squadra. Non blocca nulla qui: il
+ * controllo vero e proprio avviene al click, in trySelectTeam(), qui
+ * mostriamo solo un'indicazione visiva ("già in uso da un altro dispositivo"). */
+function refreshTeamSelectOccupancy() {
+  const wrap = $("teamSelectList");
+  if (!wrap) return;
+  for (const btn of wrap.querySelectorAll("button[data-team-id]")) {
+    const teamId = btn.dataset.teamId;
+    const name = lastTeamNames.find((n) => slugify(n) === teamId) || teamId;
+    const team = teamsById.get(teamId);
+    const occ = occupancyOf(team);
+    const full = occ.otherActive.length >= occ.maxSessions;
+    btn.textContent = full ? `${name}  •  già in uso` : name;
+    btn.classList.toggle("team-occupied", full);
+  }
+}
+
+/** Legge dal documento team quanti "posti" (dispositivi) sono attualmente
+ * occupati da ALTRI (non da questo browser), quanti ne sono ammessi in
+ * totale per quella squadra, e se questo browser occupa già lui stesso un
+ * posto. Un posto conta come occupato solo se il suo ultimo battito è
+ * recente (stessa soglia usata per l'indicatore "collegato"). */
+function occupancyOf(team) {
+  const sessions = Array.isArray(team?.activeSessions) ? team.activeSessions : [];
+  const now = Date.now();
+  const active = sessions.filter((s) => s && s.token && s.lastSeen &&
+    typeof s.lastSeen.toMillis === "function" &&
+    (now - s.lastSeen.toMillis()) < ONLINE_THRESHOLD_MS);
+  const otherActive = active.filter((s) => s.token !== mySessionToken);
+  const mineActive = active.some((s) => s.token === mySessionToken);
+  const maxSessions = team?.allowMultiple ? 2 : 1;
+  return { otherActive, mineActive, maxSessions };
+}
+
+function trySelectTeam(name, teamId) {
+  const team = teamsById.get(teamId);
+  const occ = occupancyOf(team);
+  if (occ.otherActive.length >= occ.maxSessions) {
+    alert(
+      `"${name}" è già gestita da un altro dispositivo collegato in questo momento` +
+      (occ.maxSessions > 1 ? " (ha già raggiunto il massimo di persone consentite per questa squadra)." : ".") +
+      "\n\nSe pensi sia un errore (per esempio l'altra persona ha chiuso la pagina da poco), riprova tra qualche secondo."
+    );
+    return;
+  }
+  myTeamId = teamId;
+  kickedOut = false;
+  localStorage.setItem(LS_KEY, myTeamId);
+  startLive();
 }
 
 $("btnChangeTeam").onclick = () => {
@@ -119,6 +198,102 @@ function startLive() {
   renderMyTeam();
   renderBidButtons();
   renderTeams();
+  populateManualTeamSelect();
+  startPresenceHeartbeat();
+}
+
+// ---------------------------------------------------------------------------
+// Presenza / indicatore "collegato" per squadra
+// ---------------------------------------------------------------------------
+// Non essendoci un vero login per i partecipanti (solo la scelta della
+// squadra, salvata in locale), non possiamo usare un sistema di presenza
+// legato all'autenticazione. Usiamo invece un "battito" periodico: ogni
+// browser che sta seguendo l'asta da una squadra scrive ogni pochi secondi
+// un timestamp (lastSeen) sul documento della PROPRIA squadra. Chiunque
+// altro considera quella squadra "collegata" finché il suo ultimo battito
+// non è più vecchio di ONLINE_THRESHOLD_MS: passata quella soglia (per
+// esempio la persona ha chiuso la scheda, o è caduta la connessione) la
+// squadra torna a essere mostrata come "non collegata", senza bisogno di
+// alcuna notifica esplicita di disconnessione.
+const HEARTBEAT_INTERVAL_MS = 15000;
+const ONLINE_THRESHOLD_MS = 40000;
+let heartbeatTimer = null;
+
+/** Costruisce il nuovo array activeSessions da scrivere: mantiene le voci
+ * altrui ancora "fresche" (altri dispositivi collegati alla stessa squadra
+ * nel caso "in coppia"), rimuove quelle scadute per far posto a nuovi
+ * dispositivi, e aggiorna/aggiunge la nostra con il battito di adesso. */
+function nextActiveSessions(team) {
+  const now = Date.now();
+  const existing = Array.isArray(team?.activeSessions) ? team.activeSessions : [];
+  const fresh = existing.filter((s) => s && s.token && s.token !== mySessionToken && s.lastSeen &&
+    typeof s.lastSeen.toMillis === "function" &&
+    (now - s.lastSeen.toMillis()) < ONLINE_THRESHOLD_MS);
+  fresh.push({ token: mySessionToken, lastSeen: Timestamp.now() });
+  const maxSessions = team?.allowMultiple ? 2 : 1;
+  // Non dovrebbe mai succedere (la scelta squadra blocca già l'ingresso a
+  // chi trova il posto pieno), ma per sicurezza teniamo solo gli ultimi
+  // maxSessions posti più recenti se per qualche motivo ce ne fossero di più.
+  fresh.sort((a, b) => b.lastSeen.toMillis() - a.lastSeen.toMillis());
+  return fresh.slice(0, Math.max(maxSessions, 1));
+}
+
+function startPresenceHeartbeat() {
+  if (heartbeatTimer || !myTeamId) return;
+  const sendHeartbeat = () => {
+    const team = teamsById.get(myTeamId);
+    updateDoc(doc(db, "teams", myTeamId), {
+      lastSeen: Timestamp.now(),
+      activeSessions: nextActiveSessions(team),
+    }).catch(() => {
+      // Se il documento non esiste ancora (asta appena inizializzata mentre
+      // la pagina era già aperta) o la scrittura fallisce per un attimo di
+      // disconnessione, non è un problema: riproveremo al prossimo battito.
+    });
+  };
+  sendHeartbeat();
+  heartbeatTimer = setInterval(sendHeartbeat, HEARTBEAT_INTERVAL_MS);
+  // Un ultimo battito quando la pagina sta per chiudersi/andare in background
+  // aiuta a mostrare la squadra ancora "collegata" un attimo più a lungo nel
+  // caso di un refresh rapido, ma non è essenziale: la soglia fa comunque il
+  // suo lavoro se questo evento non arriva (es. chiusura brusca del browser).
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") sendHeartbeat();
+  });
+}
+
+/** true se un ALTRO dispositivo ha preso il nostro posto sulla squadra che
+ * pensavamo di gestire noi (es. qualcuno ha riaperto "Cambia squadra" e
+ * scelto la stessa, oppure l'admin ha aumentato/diminuito i posti mentre
+ * eravamo già dentro). Controllato ad ogni aggiornamento squadre. */
+function checkStillMyTeam() {
+  if (!myTeamId || kickedOut) return;
+  const team = teamsById.get(myTeamId);
+  if (!team) return;
+  const sessions = Array.isArray(team.activeSessions) ? team.activeSessions : [];
+  const now = Date.now();
+  const mine = sessions.find((s) => s.token === mySessionToken);
+  const othersFresh = sessions.filter((s) => s.token !== mySessionToken && s.lastSeen &&
+    typeof s.lastSeen.toMillis === "function" && (now - s.lastSeen.toMillis()) < ONLINE_THRESHOLD_MS);
+  const maxSessions = team.allowMultiple ? 2 : 1;
+  // Se il nostro token non è (più) tra le sessioni attive E i posti sono
+  // tutti occupati da altri, significa che qualcun altro ci ha "scavalcato".
+  if (!mine && othersFresh.length >= maxSessions) {
+    kickedOut = true;
+    if (heartbeatTimer) { clearInterval(heartbeatTimer); heartbeatTimer = null; }
+    alert(
+      "Un altro dispositivo ha preso il controllo di questa squadra.\n\n" +
+      "Se pensi sia un errore, contatta l'amministratore dell'asta."
+    );
+    localStorage.removeItem(LS_KEY);
+    location.reload();
+  }
+}
+
+function isTeamOnline(team) {
+  const ts = team?.lastSeen;
+  if (!ts || typeof ts.toMillis !== "function") return false;
+  return (Date.now() - ts.toMillis()) < ONLINE_THRESHOLD_MS;
 }
 
 // ---------------------------------------------------------------------------
@@ -138,6 +313,8 @@ function ensureCoreSubscriptions() {
     renderTeamsAdmin();
     populateManualTeamSelect();
     renderControl();
+    refreshTeamSelectOccupancy();
+    checkStillMyTeam();
   });
 
   onSnapshot(doc(db, "state", "auction"), (snap) => {
@@ -211,6 +388,7 @@ onAuthStateChanged(auth, (user) => {
     playersById = new Map();
   }
   renderTeamsAdmin();
+  populateManualTeamSelect();
   renderControl();
 });
 
@@ -299,6 +477,15 @@ setInterval(() => {
   tickTimer();
   if (isAdminUser) maybeAutoFinalize();
 }, 250);
+
+// Intervallo più lento SOLO per aggiornare l'indicatore "collegato/non
+// collegato" per squadra: la soglia ONLINE_THRESHOLD_MS è basata sul tempo
+// che passa, quindi va ricontrollata anche senza che arrivi un nuovo evento
+// Firestore (altrimenti una squadra disconnessa resterebbe mostrata come
+// "collegata" finché qualcun altro non fa un rilancio).
+setInterval(() => {
+  if (!$("liveView").classList.contains("hidden")) renderTeams();
+}, 5000);
 
 // ---------------------------------------------------------------------------
 // Render: le mie info + pulsanti di rilancio
@@ -403,9 +590,14 @@ function renderTeams() {
     // Ordine SEMPRE per macro-ruolo base (P poi D poi C poi A), indipendente
     // dall'ordine in cui i giocatori sono stati acquistati: un centrocampista
     // comprato dopo un attaccante va comunque visualizzato prima di lui.
+    // All'interno dello STESSO macro-ruolo, un Difensore che è anche "E" o
+    // un Centrocampista che è anche "T"/"W" viene posizionato più avanti nel
+    // proprio blocco (più vicino al ruolo successivo), senza mai uscirne.
     const roster = (team.roster || []).slice().sort((a, b) => {
       const byRole = ROLE_ORDER.indexOf(a.ruolo) - ROLE_ORDER.indexOf(b.ruolo);
       if (byRole !== 0) return byRole;
+      const byPush = forwardPushRank(a) - forwardPushRank(b);
+      if (byPush !== 0) return byPush;
       return fullName(a).localeCompare(fullName(b), "it");
     });
     const rows = roster.map((p) => {
@@ -424,8 +616,10 @@ function renderTeams() {
         <span class="tp-name">${escapeHtml(fullName(p))}</span>
       </div>`;
     }).join("");
+    const online = team.id === myTeamId ? true : isTeamOnline(team);
     col.innerHTML = `
       <div class="t-head">
+        <span class="conn-dot${online ? " online" : ""}" title="${online ? "Collegato" : "Non collegato"}"></span>
         <span class="t-name">${escapeHtml(team.name)}</span>
       </div>
       <div class="tp-list">${rows}</div>
@@ -456,8 +650,9 @@ function renderCreditsSummary(names, budget) {
   list.innerHTML = sorted.map((team) => {
     const isMe = team.id === myTeamId;
     const isLeading = state && state.currentBidTeam === team.id;
+    const online = isMe ? true : isTeamOnline(team);
     return `<div class="cs-row${isMe ? " me" : ""}${isLeading ? " leading" : ""}">
-      <span class="cs-name">${escapeHtml(team.name)}</span>
+      <span class="cs-name"><span class="conn-dot${online ? " online" : ""}" title="${online ? "Collegato" : "Non collegato"}"></span>${escapeHtml(team.name)}</span>
       <span class="cs-credits" style="color:${creditColor(team.credits, budget)}">${formatCredits(team.credits)}</span>
     </div>`;
   }).join("");
@@ -466,7 +661,13 @@ function renderCreditsSummary(names, budget) {
 function openRosterModal(team) {
   $("rosterModalTitle").textContent = `Rosa — ${team.name}`;
   const body = $("rosterModalBody");
-  const roster = (team.roster || []).slice().sort((a, b) => a.ruolo.localeCompare(b.ruolo));
+  const roster = (team.roster || []).slice().sort((a, b) => {
+    const byRole = ROLE_ORDER.indexOf(a.ruolo) - ROLE_ORDER.indexOf(b.ruolo);
+    if (byRole !== 0) return byRole;
+    const byPush = forwardPushRank(a) - forwardPushRank(b);
+    if (byPush !== 0) return byPush;
+    return fullName(a).localeCompare(fullName(b), "it");
+  });
   body.innerHTML = roster.length ? "" : '<p class="small">Ancora nessun giocatore acquistato.</p>';
   for (const p of roster) {
     const row = document.createElement("div");
@@ -585,7 +786,7 @@ $("btnInit").onclick = async () => {
     await commitInChunks(ops);
 
     await setDoc(doc(db, "config", "public"), {
-      leagueName: "FantaFanta Patti",
+      leagueName: DEFAULT_CONFIG.leagueName,
       teams: teamNames,
       budget,
       rosterRules: rulesNew,
@@ -968,17 +1169,28 @@ function renderTeamsAdmin() {
   const teams = [...teamsById.values()].sort((a, b) => a.name.localeCompare(b.name, "it"));
   wrap.innerHTML = teams.map((team) => {
     const rs = rosterStatus(team, rules);
-    const roster = (team.roster || []).slice().sort((a, b) => ROLE_ORDER.indexOf(a.ruolo) - ROLE_ORDER.indexOf(b.ruolo));
+    const roster = (team.roster || []).slice().sort((a, b) => {
+      const byRole = ROLE_ORDER.indexOf(a.ruolo) - ROLE_ORDER.indexOf(b.ruolo);
+      if (byRole !== 0) return byRole;
+      return forwardPushRank(a) - forwardPushRank(b);
+    });
+    const online = isTeamOnline(team);
     return `
       <div class="card" style="background:var(--panel-2);">
         <div class="row between">
-          <strong>${escapeHtml(team.name)}</strong>
+          <strong><span class="conn-dot${online ? " online" : ""}" title="${online ? "Collegato" : "Non collegato"}"></span>${escapeHtml(team.name)}</strong>
           <span class="small">${rs.portieri}/${rules.portiereMin}-${rules.portiereMax} Por · ${rs.totale}/${rules.totaleMin}-${rules.totaleMax} tot ${rs.rischioPortieri ? '<span class="t-warn">⚠ rischio portieri</span>' : ""}</span>
         </div>
         <div class="row center mt">
           <label style="margin:0;">Crediti:</label>
           <input type="number" class="credits-input" data-team="${team.id}" value="${team.credits}" style="max-width:110px;" />
           <button class="btn" data-action="save-credits" data-team="${team.id}">Salva</button>
+        </div>
+        <div class="row center mt">
+          <label class="row center" style="margin:0; gap:6px; cursor:pointer;">
+            <input type="checkbox" data-action="toggle-allow-multiple" data-team="${team.id}" ${team.allowMultiple ? "checked" : ""} style="width:auto;" />
+            <span class="small">Squadra "in coppia" (ammetti 2 dispositivi collegati insieme)</span>
+          </label>
         </div>
         <div class="roster-list mt">
           ${roster.length ? roster.map((p) => `
@@ -1012,13 +1224,37 @@ $("teamsAdminList").addEventListener("click", async (e) => {
   }
 });
 
+$("teamsAdminList").addEventListener("change", async (e) => {
+  const cb = e.target.closest('[data-action="toggle-allow-multiple"]');
+  if (!cb) return;
+  const teamId = cb.dataset.team;
+  try {
+    await updateDoc(doc(db, "teams", teamId), { allowMultiple: cb.checked });
+  } catch (err) {
+    cb.checked = !cb.checked;
+    alert("Errore: " + err.message);
+  }
+});
+
+// Ricostruiamo le <option> del menù "assegna manualmente" SOLO quando
+// l'elenco squadre (id o nome) è davvero cambiato, non ad ogni singolo
+// aggiornamento di crediti (che durante un'asta live con tante squadre
+// avviene in continuazione). Ricostruire l'HTML del <select> ad ogni
+// rilancio poteva far perdere all'admin la squadra appena selezionata dal
+// menù a tendina mentre stava ancora scrivendo il prezzo: questo era il bug
+// per cui "il menù a tendina non funziona".
+let lastManualTeamSelectKey = "";
 function populateManualTeamSelect() {
   if (!isAdminUser) return;
   const sel = $("manualTeamSelect");
+  if (!sel) return;
+  const sorted = [...teamsById.values()].sort((a, b) => a.name.localeCompare(b.name, "it"));
+  const key = sorted.map((t) => t.id + ":" + t.name).join("|");
+  if (key === lastManualTeamSelectKey) return; // elenco squadre invariato: non toccare la selezione corrente
+  lastManualTeamSelectKey = key;
   const current = sel.value;
   sel.innerHTML = '<option value="">Squadra…</option>' +
-    [...teamsById.values()].sort((a, b) => a.name.localeCompare(b.name, "it"))
-      .map((t) => `<option value="${t.id}">${escapeHtml(t.name)}</option>`).join("");
+    sorted.map((t) => `<option value="${t.id}">${escapeHtml(t.name)}</option>`).join("");
   if ([...sel.options].some((o) => o.value === current)) sel.value = current;
 }
 

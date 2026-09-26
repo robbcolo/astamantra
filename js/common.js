@@ -1,5 +1,5 @@
 // ============================================================================
-// FantaFanta Patti — logica condivisa tra pagina partecipante e pagina admin.
+// FantaMantra Patti — logica condivisa tra pagina partecipante e pagina admin.
 // ============================================================================
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
@@ -22,7 +22,7 @@ const USE_EMULATOR = new URLSearchParams(location.search).has("emulator");
 if (USE_EMULATOR) {
   connectFirestoreEmulator(db, "127.0.0.1", 8080);
   connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
-  console.warn("FantaFanta Patti: collegato all'EMULATORE locale, non al progetto reale.");
+  console.warn("FantaMantra Patti: collegato all'EMULATORE locale, non al progetto reale.");
 }
 
 // ----------------------------------------------------------------------------
@@ -89,12 +89,29 @@ export function mantraColorGroup(sigla) {
   return MANTRA_COLOR_GROUP[sigla] || "mc";
 }
 
+/** Chiave di ordinamento SECONDARIA, usata solo per decidere la posizione
+ * di un calciatore ALL'INTERNO del proprio macro-ruolo base (P/D/C/A) —
+ * non cambia mai il macro-ruolo, che resta sempre il criterio primario.
+ * Un Difensore che è ANCHE "E" (esterno, di fatto un centrocampista
+ * aggiunto) va posizionato "più avanti" nel blocco Difensori, cioè più
+ * vicino ai Centrocampisti pur restando un difensore; allo stesso modo un
+ * Centrocampista che è ANCHE "T" o "W" (trequartista/ala, di fatto un
+ * attaccante aggiunto) va posizionato "più avanti" nel blocco
+ * Centrocampisti, più vicino agli Attaccanti. Ritorna 0 (posizione
+ * normale) o 1 (spostato in fondo al proprio blocco). */
+export function forwardPushRank(player) {
+  const sigle = mantraRoles(player);
+  if (player.ruolo === "Difensore" && sigle.includes("E")) return 1;
+  if (player.ruolo === "Centrocampista" && (sigle.includes("T") || sigle.includes("W"))) return 1;
+  return 0;
+}
+
 export const DEFAULT_ROSTER_RULES = {
   portiereMin: 3, portiereMax: 5, totaleMin: 26, totaleMax: 34,
 };
 
 export const DEFAULT_CONFIG = {
-  leagueName: "FantaFanta Patti",
+  leagueName: "FantaMantra Patti",
   budget: 500,
   bidTimerSeconds: 12,
   openTimerSeconds: 25,

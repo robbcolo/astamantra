@@ -1,7 +1,7 @@
 rules_version = '2';
 
 // ============================================================================
-// FantaFanta Patti — Asta Online — Regole di sicurezza Firestore
+// FantaMantra Patti — Asta Online — Regole di sicurezza Firestore
 // ============================================================================
 // Modello:
 //  - config/public   : impostazioni lega (squadre, budget, regole rosa, timer,
@@ -48,11 +48,22 @@ service cloud.firestore {
       allow read: if true;
       allow create: if isAdmin();
       allow delete: if isAdmin();
-      // L'admin può sempre scrivere. Un rilancio valido può SOLO alzare il
-      // proprio pegno implicito nel documento state/auction (non tocca mai
-      // teams/*), quindi qui l'unica scrittura non-admin ammessa è nessuna:
-      // i crediti/rosa di una squadra cambiano solo quando l'admin assegna.
-      allow update: if isAdmin();
+      // L'admin può sempre scrivere. In più, chi sta seguendo l'asta da quella
+      // squadra (nessun login, solo scelta della squadra in locale) può
+      // aggiornare SOLO il proprio "battito" di presenza (lastSeen e
+      // activeSessions — quest'ultimo usato per la regola "una persona per
+      // squadra"): non sono dati sensibili, ma la regola comunque impedisce
+      // che quella stessa scrittura tocchi crediti, rosa, nome o
+      // allowMultiple — quelli cambiano solo quando l'admin assegna un
+      // giocatore o configura la squadra.
+      allow update: if isAdmin() || isHeartbeatOnly();
+    }
+
+    function isHeartbeatOnly() {
+      let incoming = request.resource.data;
+      let current  = resource.data;
+      return incoming.diff(current).affectedKeys().hasOnly(["lastSeen", "activeSessions"]) &&
+             incoming.lastSeen is timestamp;
     }
 
     match /state/auction {

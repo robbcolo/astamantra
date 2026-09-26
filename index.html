@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-<title>FantaFanta Patti — Asta live</title>
+<title>FantaMantra Patti — Asta live</title>
 <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
 <div class="wrap">
 
   <div class="topbar">
-    <div class="brand">🏆 <span id="leagueName">FantaFanta Patti</span><span class="sub">Asta live</span></div>
+    <div class="brand">🏆 <span id="leagueName">FantaMantra Patti</span><span class="sub">Asta live</span></div>
     <div class="row center">
       <span id="connDot" class="pill">● collegamento…</span>
       <button id="btnChangeTeam" class="btn ghost hidden">Cambia squadra</button>
@@ -142,32 +142,34 @@ Squadra 2
           <h2>🏁 Asta terminata!</h2>
           <p class="player-meta">Tutti i calciatori del listone sono stati chiamati.</p>
         </div>
-        <div id="stagePlayer" class="hidden">
+        <div id="stagePlayer" class="hidden stage-player-row">
           <div class="player-photo-wrap">
             <img id="playerPhoto" class="player-photo" alt="" />
           </div>
-          <span id="playerRoleBadge" class="role-badge-group"></span>
-          <div class="player-name" id="playerName">—</div>
-          <div class="player-meta" id="playerMeta">—</div>
+          <div class="stage-info">
+            <span id="playerRoleBadge" class="role-badge-group"></span>
+            <div class="player-name" id="playerName">—</div>
+            <div class="player-meta" id="playerMeta">—</div>
 
-          <div class="bid-display">
-            <div class="bid-amount-wrap">
-              <span class="bid-coin">🪙</span>
-              <div>
-                <div class="bid-amount" id="currentBid">0</div>
-                <div class="bid-team" id="currentBidTeam">Nessuna offerta</div>
+            <div class="bid-display">
+              <div class="bid-amount-wrap">
+                <span class="bid-coin">🪙</span>
+                <div>
+                  <div class="bid-amount" id="currentBid">0</div>
+                  <div class="bid-team" id="currentBidTeam">Nessuna offerta</div>
+                </div>
               </div>
+              <div id="timerRing" class="timer-ring ok">⏳ —</div>
             </div>
-            <div id="timerRing" class="timer-ring ok">⏳ —</div>
-          </div>
 
-          <div class="bid-buttons" id="bidButtons">
-            <button class="btn primary" data-delta="1">+1</button>
-            <button class="btn primary" data-delta="5">+5</button>
-            <button class="btn primary" data-delta="10">+10</button>
-            <button class="btn" id="btnAltro">Altro…</button>
+            <div class="bid-buttons" id="bidButtons">
+              <button class="btn primary" data-delta="1">+1</button>
+              <button class="btn primary" data-delta="5">+5</button>
+              <button class="btn primary" data-delta="10">+10</button>
+              <button class="btn" id="btnAltro">Altro…</button>
+            </div>
+            <p id="bidError" class="small" style="color:var(--danger); min-height:1.2em; margin-top:6px;"></p>
           </div>
-          <p id="bidError" class="small" style="color:var(--danger); min-height:1.2em; margin-top:10px;"></p>
         </div>
       </div>
 
