@@ -1,0 +1,247 @@
+:root {
+  --bg: #0f1420;
+  --panel: #1a2233;
+  --panel-2: #212c42;
+  --border: #2c3855;
+  --text: #eef1f8;
+  --text-dim: #9aa5bd;
+  --accent: #4f8cff;
+  --ok: #33c46a;
+  --warn: #e8b93b;
+  --danger: #e2483d;
+  --role-p: #e2b93b;
+  --role-d: #3b82c4;
+  --role-c: #3bc46b;
+  --role-a: #c43b3b;
+  --radius: 16px;
+  --radius-sm: 10px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3 { margin: 0 0 0.4em 0; }
+
+.wrap {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 14px 14px 60px 14px;
+}
+
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 4px 16px 4px;
+  gap: 10px;
+}
+.topbar .brand { font-weight: 700; font-size: 1.15rem; letter-spacing: 0.2px; }
+.topbar .brand .sub { color: var(--text-dim); font-weight: 400; font-size: 0.8rem; display: block; }
+
+.card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 14px;
+}
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 6px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: var(--radius-sm);
+  padding: 10px 16px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform .05s ease, background .15s ease, opacity .15s ease;
+  user-select: none;
+}
+.btn:hover { background: #283354; }
+.btn:active { transform: scale(0.97); }
+.btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.danger { background: var(--danger); border-color: var(--danger); color: #fff; }
+.btn.ok { background: var(--ok); border-color: var(--ok); color: #06210f; }
+.btn.ghost { background: transparent; }
+.btn.big { padding: 16px 22px; font-size: 1.15rem; border-radius: 14px; }
+.btn.block { width: 100%; }
+
+.row { display: flex; gap: 10px; flex-wrap: wrap; }
+.row.center { align-items: center; }
+.row.between { justify-content: space-between; align-items: center; }
+.grow { flex: 1 1 auto; min-width: 0; }
+
+.pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--panel-2); border: 1px solid var(--border);
+  border-radius: 999px; padding: 4px 12px; font-size: 0.82rem; color: var(--text-dim);
+}
+
+input[type="text"], input[type="number"], input[type="password"], input[type="email"], select {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  font-size: 1rem;
+  width: 100%;
+}
+label { font-size: 0.85rem; color: var(--text-dim); display: block; margin: 10px 0 4px 0; }
+
+/* ---------------- Stage: giocatore in asta ---------------- */
+
+.stage {
+  border-radius: var(--radius);
+  background: linear-gradient(180deg, #1c2740, #141b2c);
+  border: 1px solid var(--border);
+  padding: 22px;
+  text-align: center;
+  margin-bottom: 16px;
+}
+.stage .role-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-weight: 700; font-size: 0.95rem;
+  padding: 6px 16px; border-radius: 999px;
+  margin-bottom: 10px;
+}
+.stage .player-name {
+  font-size: clamp(1.6rem, 6vw, 2.6rem);
+  font-weight: 800;
+  line-height: 1.1;
+  margin: 4px 0 6px 0;
+  word-break: break-word;
+}
+.stage .player-meta { color: var(--text-dim); font-size: 1rem; margin-bottom: 18px; }
+
+.bid-display {
+  display: flex; align-items: center; justify-content: center; gap: 26px;
+  flex-wrap: wrap;
+  margin: 10px 0 18px 0;
+}
+.bid-amount {
+  font-size: clamp(2.4rem, 10vw, 4.2rem);
+  font-weight: 900;
+  color: #fff;
+  line-height: 1;
+}
+.bid-team {
+  font-size: 1.05rem;
+  color: var(--accent);
+  font-weight: 700;
+}
+.timer-ring {
+  font-size: clamp(2rem, 8vw, 3rem);
+  font-weight: 900;
+  width: 1.6em; height: 1.6em;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  border: 6px solid var(--border);
+}
+.timer-ring.low { border-color: var(--danger); color: var(--danger); animation: pulse 1s infinite; }
+.timer-ring.mid { border-color: var(--warn); color: var(--warn); }
+.timer-ring.ok { border-color: var(--ok); color: var(--ok); }
+@keyframes pulse { 0%,100% { transform: scale(1);} 50% { transform: scale(1.08);} }
+
+.bid-buttons { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+.bid-buttons .btn { min-width: 84px; }
+
+.status-banner {
+  text-align: center; padding: 10px; border-radius: var(--radius-sm);
+  font-weight: 700; margin-bottom: 14px;
+}
+.status-banner.sold { background: rgba(51,196,106,0.14); color: var(--ok); }
+.status-banner.unsold { background: rgba(232,185,59,0.14); color: var(--warn); }
+.status-banner.idle { background: rgba(79,140,255,0.14); color: var(--accent); }
+
+/* ---------------- Ruoli ---------------- */
+.role-p { color: var(--role-p); }
+.role-d { color: var(--role-d); }
+.role-c { color: var(--role-c); }
+.role-a { color: var(--role-a); }
+.role-badge.role-p { background: rgba(226,185,59,0.18); }
+.role-badge.role-d { background: rgba(59,130,196,0.18); }
+.role-badge.role-c { background: rgba(59,196,107,0.18); }
+.role-badge.role-a { background: rgba(196,59,59,0.18); }
+
+/* ---------------- Squadre ---------------- */
+
+.teams-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+}
+.team-card {
+  background: var(--panel-2);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: border-color .15s ease;
+}
+.team-card:hover { border-color: var(--accent); }
+.team-card.me { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+.team-card.leading { border-color: var(--ok); box-shadow: 0 0 0 1px var(--ok) inset; }
+.team-card .t-name { font-weight: 700; font-size: 0.95rem; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.team-card .t-credits { font-size: 1.35rem; font-weight: 800; }
+.team-card .t-sub { font-size: 0.75rem; color: var(--text-dim); margin-top: 3px; }
+.team-card .t-warn { color: var(--danger); font-weight: 700; }
+
+.roster-list { max-height: 50vh; overflow-y: auto; }
+.roster-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 4px; border-bottom: 1px solid var(--border);
+  font-size: 0.9rem;
+}
+.roster-row:last-child { border-bottom: none; }
+.roster-row .rr-role { width: 1.6em; text-align: center; font-weight: 800; }
+.roster-row .rr-name { flex: 1; }
+.roster-row .rr-price { font-weight: 700; }
+
+/* ---------------- Modal ---------------- */
+.modal-backdrop {
+  position: fixed; inset: 0; background: rgba(5,8,16,0.72);
+  display: flex; align-items: flex-start; justify-content: center;
+  padding: 24px 12px; overflow-y: auto; z-index: 50;
+}
+.modal {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px; width: 100%; max-width: 640px;
+}
+.modal.wide { max-width: 900px; }
+
+.ticker {
+  font-size: 0.85rem; color: var(--text-dim);
+  display: flex; flex-direction: column; gap: 4px;
+  max-height: 140px; overflow-y: auto;
+}
+
+.select-list { display: flex; flex-direction: column; gap: 8px; }
+.select-list .btn { justify-content: flex-start; font-size: 1.05rem; padding: 14px 18px; }
+
+table.admin-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+table.admin-table th, table.admin-table td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); }
+table.admin-table th { color: var(--text-dim); font-weight: 600; }
+
+.small { font-size: 0.8rem; color: var(--text-dim); }
+.center-text { text-align: center; }
+.mt { margin-top: 12px; }
+.hidden { display: none !important; }
+
+.badge-count {
+  background: var(--panel-2); border-radius: 999px; padding: 2px 10px; font-size: 0.8rem; color: var(--text-dim);
+}
+
+@media (max-width: 480px) {
+  .wrap { padding: 10px 8px 50px 8px; }
+  .card { padding: 12px; }
+}

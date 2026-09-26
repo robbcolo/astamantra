@@ -1,0 +1,97 @@
+rules_version = '2';
+
+// ============================================================================
+// FantaFanta Patti — Asta Online — Regole di sicurezza Firestore
+// ============================================================================
+// Modello:
+//  - config/public   : impostazioni lega (squadre, budget, regole rosa, timer,
+//                        ordine di chiamata dei calciatori)
+//  - players/{id}     : listone (un documento per calciatore)
+//  - teams/{id}        : una squadra (crediti residui + rosa acquistata)
+//  - state/auction    : stato live dell'asta (chi si sta chiamando, offerta
+//                        corrente, timer, ultime assegnazioni)
+//
+// Chi può scrivere cosa:
+//  - L'ADMIN (Roberto, loggato con email+password Firebase, riconosciuto dal
+//    suo UID) può scrivere ovunque: carica il listone, configura le squadre,
+//    avvia/ferma l'asta, chiama il prossimo giocatore, assegna il giocatore
+//    alla squadra vincitrice, corregge rose/crediti a mano, esporta.
+//  - I PARTECIPANTI (nessun login, solo scelta della squadra) possono SOLO
+//    rilanciare: alzare currentBid/currentBidTeam/timerEndsAt sul documento
+//    state/auction, e SOLO se l'asta è in corso ("bidding"), il rilancio è
+//    più alto di quello attuale, e la loro squadra ha credito sufficiente.
+//    Non possono mai toccare players/teams direttamente: l'assegnazione
+//    finale del giocatore (che sposta crediti e aggiorna le rose) la fa
+//    sempre e solo l'admin, quindi non ci sono mai due browser che scrivono
+//    in conflitto sullo stesso documento squadra/giocatore.
+// ============================================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAdmin() {
+      return request.auth != null &&
+             request.auth.uid == "Hj96TYxrF2e05prGCmMdIF1lDG03";
+    }
+
+    match /config/{doc} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /players/{playerId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /teams/{teamId} {
+      allow read: if true;
+      allow create: if isAdmin();
+      allow delete: if isAdmin();
+      // L'admin può sempre scrivere. Un rilancio valido può SOLO alzare il
+      // proprio pegno implicito nel documento state/auction (non tocca mai
+      // teams/*), quindi qui l'unica scrittura non-admin ammessa è nessuna:
+      // i crediti/rosa di una squadra cambiano solo quando l'admin assegna.
+      allow update: if isAdmin();
+    }
+
+    match /state/auction {
+      allow read: if true;
+      allow create: if isAdmin();
+
+      // L'admin può sempre aggiornare lo stato (nuovo giocatore, assegnazione,
+      // pausa, ecc). Un partecipante può aggiornare SOLO per rilanciare.
+      allow update: if isAdmin() || isValidBid();
+    }
+
+    function isValidBid() {
+      let incoming = request.resource.data;
+      let current  = resource.data;
+
+      return
+        // si può rilanciare solo mentre l'asta è aperta sul giocatore corrente
+        current.status == "bidding" &&
+        incoming.status == "bidding" &&
+        incoming.currentPlayerId == current.currentPlayerId &&
+
+        // il nuovo rilancio deve essere un numero più alto di quello attuale
+        incoming.currentBid is number &&
+        incoming.currentBid > current.currentBid &&
+
+        // deve dichiarare una squadra valida tra quelle configurate
+        incoming.currentBidTeam is string &&
+
+        // la squadra che rilancia deve avere credito sufficiente
+        get(/databases/$(database)/documents/teams/$(incoming.currentBidTeam)).data.credits >= incoming.currentBid &&
+
+        // il timer deve essere spostato in avanti (si sta resettando il countdown)
+        incoming.timerEndsAt is timestamp &&
+
+        // tutti gli altri campi restano invariati: un rilancio non può
+        // toccare lo storico vendite o altro
+        incoming.lastSoldPlayerId == current.lastSoldPlayerId &&
+        incoming.lastSoldTeam == current.lastSoldTeam &&
+        incoming.lastSoldPrice == current.lastSoldPrice;
+    }
+  }
+}

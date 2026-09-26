@@ -1,0 +1,491 @@
+ruolo,cognome,nome,squadra,quotazione,ruolo_mantra
+Portiere,Svilar,,Roma,18.0,Por
+Portiere,Martinez Jo.,,Inter,17.0,Por
+Portiere,Carnesecchi,,Atalanta,16.0,Por
+Portiere,Butez,,Como,16.0,Por
+Portiere,Maignan,,Milan,15.0,Por
+Portiere,De Gea,,Fiorentina,13.0,Por
+Portiere,Meret,,Napoli,11.0,Por
+Portiere,Skorupski,,Bologna,10.0,Por
+Portiere,Caprile,,Cagliari,9.0,Por
+Portiere,Di Gregorio,,Juventus,9.0,Por
+Portiere,Mandas,,Lazio,9.0,Por
+Portiere,Okoye,,Udinese,9.0,Por
+Portiere,Bijlow,,Genoa,8.0,Por
+Portiere,Falcone,,Lecce,8.0,Por
+Portiere,Daffara,,Parma,7.0,Por
+Portiere,Suzuki,,Parma,7.0,Por
+Portiere,Muric,,Sassuolo,7.0,Por
+Portiere,Perin,,Juventus,6.0,Por
+Portiere,Stankovic F.,,Venezia,6.0,Por
+Portiere,Thiam,,Monza,5.0,Por
+Portiere,Milinkovic-Savic V.,,Napoli,5.0,Por
+Portiere,Palmisani,,Frosinone,4.0,Por
+Portiere,Desplanches,,Frosinone,2.0,Por
+Portiere,Provedel,,Inter,2.0,Por
+Portiere,Sportiello,,Atalanta,1.0,Por
+Portiere,Happonen,,Bologna,1.0,Por
+Portiere,Pessina Mas.,,Bologna,1.0,Por
+Portiere,Ciocci,,Cagliari,1.0,Por
+Portiere,Sherri,,Cagliari,1.0,Por
+Portiere,Tornqvist,,Como,1.0,Por
+Portiere,Vigorito,,Como,1.0,Por
+Portiere,Christensen O.,,Fiorentina,1.0,Por
+Portiere,Lezzerini,,Fiorentina,1.0,Por
+Portiere,Lolic,,Frosinone,1.0,Por
+Portiere,Sommariva,,Genoa,1.0,Por
+Portiere,Stolz,,Genoa,1.0,Por
+Portiere,Di Gennaro,,Inter,1.0,Por
+Portiere,Pinsoglio,,Juventus,1.0,Por
+Portiere,Motta,,Lazio,1.0,Por
+Portiere,Renzetti,,Lazio,1.0,Por
+Portiere,Samooja,,Lecce,1.0,Por
+Portiere,Terracciano,,Milan,1.0,Por
+Portiere,Torriani,,Milan,1.0,Por
+Portiere,Pizzignacco,,Monza,1.0,Por
+Portiere,Strajnar,,Monza,1.0,Por
+Portiere,Contini,,Napoli,1.0,Por
+Portiere,Corvi,,Parma,1.0,Por
+Portiere,De Marzi,,Roma,1.0,Por
+Portiere,Gollini,,Roma,1.0,Por
+Portiere,Russo A.,,Sassuolo,1.0,Por
+Portiere,Turati,,Sassuolo,1.0,Por
+Portiere,Mascardi,,Torino,1.0,Por
+Portiere,Paleari,,Torino,1.0,Por
+Portiere,Siviero,,Torino,1.0,Por
+Portiere,Padelli,,Udinese,1.0,Por
+Portiere,Piana,,Udinese,1.0,Por
+Portiere,Grandi,,Venezia,1.0,Por
+Portiere,Pozzi,,Venezia,1.0,Por
+Portiere,Vismara,,Atalanta,1.0,Por
+Difensore,Dimarco,,Inter,32.0,E;W
+Difensore,Wesley,,Roma,17.0,E
+Difensore,Akanji,,Inter,16.0,Dc
+Difensore,Bremer,,Juventus,15.0,Dc
+Difensore,Mancini,,Roma,15.0,Dc
+Difensore,Bastoni,,Inter,14.0,Dc
+Difensore,Pavlovic,,Milan,14.0,Dc
+Difensore,Rrahmani,,Napoli,14.0,Dc
+Difensore,Kalulu,,Juventus,13.0,Dd;Dc
+Difensore,N'Dicka,,Roma,13.0,Dc
+Difensore,Solet,,Udinese,13.0,Dc
+Difensore,Stones,,Inter,12.0,Dc
+Difensore,Gila,,Milan,12.0,Dc
+Difensore,Di Lorenzo,,Napoli,12.0,Dd;E
+Difensore,Ostigard,,Genoa,11.0,Dc
+Difensore,Bisseck,,Inter,11.0,Dc
+Difensore,Scalvini,,Atalanta,10.0,Dc
+Difensore,Ramon,,Como,10.0,Dc
+Difensore,Dodò,,Fiorentina,10.0,Dd;E
+Difensore,Hermoso,,Roma,10.0,Dc
+Difensore,Vasquez,,Genoa,9.0,Ds;Dc
+Difensore,Cambiaso,,Juventus,9.0,Dd;Ds;E
+Difensore,Hien,,Atalanta,8.0,Dc
+Difensore,Zappacosta,,Atalanta,8.0,Dd;E
+Difensore,Lucumì,,Bologna,8.0,Dc
+Difensore,Miranda J.,,Bologna,8.0,Ds;E
+Difensore,Mina,,Cagliari,8.0,Dc
+Difensore,Dragusin,,Fiorentina,8.0,Dc
+Difensore,Jimenez A.,,Fiorentina,8.0,Dd;Ds;E
+Difensore,Norton-Cuffy,,Genoa,8.0,Dd;E
+Difensore,Celik,,Juventus,8.0,B;Dd;E
+Difensore,Bartesaghi,,Milan,8.0,Ds;E
+Difensore,Spinazzola,,Napoli,8.0,Ds;E
+Difensore,Delprato,,Parma,8.0,B;Dd;E
+Difensore,Valeri,,Parma,8.0,Ds;E
+Difensore,Koulierakis,,Roma,8.0,Dc
+Difensore,Vojvoda,,Udinese,8.0,Dd;E
+Difensore,Djimsiti,,Atalanta,7.0,Dc
+Difensore,Obert,,Cagliari,7.0,B;Ds;E
+Difensore,Kaiki,,Como,7.0,Ds;E
+Difensore,Carlos Augusto,,Inter,7.0,B;Ds;E
+Difensore,Doekhi,,Lazio,7.0,Dc
+Difensore,Romagnoli,,Lazio,7.0,Dc
+Difensore,Tiago Gabriel,,Lecce,7.0,Dc
+Difensore,Gabbia,,Milan,7.0,Dc
+Difensore,Tomori,,Milan,7.0,Dc
+Difensore,Buongiorno,,Napoli,7.0,Dc
+Difensore,Idzes,,Sassuolo,7.0,Dc
+Difensore,Coco,,Torino,7.0,Dc
+Difensore,Ismajli,,Torino,7.0,Dc
+Difensore,Kristensen T.,,Udinese,7.0,Dd;Dc
+Difensore,Ahanor,,Atalanta,6.0,B;Ds;E
+Difensore,Bellanova,,Atalanta,6.0,Dd;E
+Difensore,Bernasconi,,Atalanta,6.0,Ds;E
+Difensore,Heggem,,Bologna,6.0,Ds;Dc
+Difensore,Zortea,,Bologna,6.0,Dd;E
+Difensore,Valle,,Como,6.0,Ds;E
+Difensore,Valdepenas,,Fiorentina,6.0,Ds;Dc
+Difensore,Viery,,Fiorentina,6.0,Ds;Dc
+Difensore,Monterisi,,Frosinone,6.0,Dc
+Difensore,Marcandalli,,Genoa,6.0,Dc
+Difensore,Pavard,,Inter,6.0,Dd;Dc
+Difensore,Tavares N.,,Lazio,6.0,Ds;E
+Difensore,Marusic,,Lazio,6.0,Dd;Ds;E
+Difensore,Gallo,,Lecce,6.0,Ds;E
+Difensore,Mangas,,Monza,6.0,Ds;E
+Difensore,Beukema,,Napoli,6.0,Dc
+Difensore,Circati,,Parma,6.0,Dc
+Difensore,Comuzzo,,Torino,6.0,Dc
+Difensore,Kamara H.,,Udinese,6.0,Ds;E
+Difensore,Bella-Kotchap,,Venezia,6.0,Dc
+Difensore,Kolasinac,,Atalanta,5.0,Ds;Dc
+Difensore,Vitik,,Bologna,5.0,Dc
+Difensore,Holm,,Bologna,5.0,Dd;E
+Difensore,Kofler,,Cagliari,5.0,Dc
+Difensore,Zè Pedro,,Cagliari,5.0,Dd;Dc
+Difensore,Kempf,,Como,5.0,Dc
+Difensore,Parisi,,Fiorentina,5.0,Ds;E
+Difensore,Bracaglia,,Frosinone,5.0,Ds;Dc
+Difensore,Oyono A.,,Frosinone,5.0,Dd;E
+Difensore,Martin,,Genoa,5.0,Ds;E
+Difensore,Kelly L.,,Juventus,5.0,Ds;Dc
+Difensore,Pedraza,,Lazio,5.0,Ds;E
+Difensore,Gaspar K.,,Lecce,5.0,Dc
+Difensore,Veiga D.,,Lecce,5.0,Dd;E
+Difensore,Olivera,,Napoli,5.0,B;Ds;E
+Difensore,Rensch,,Roma,5.0,B;Dd;E
+Difensore,Pedersen,,Torino,5.0,Dd;E
+Difensore,Moreno M.,,Venezia,5.0,Dc
+Difensore,Haps,,Venezia,5.0,Ds;E
+Difensore,Zappa,,Cagliari,4.0,B;Dd;E
+Difensore,Smolcic I.,,Como,4.0,Dd;E
+Difensore,Pongracic,,Fiorentina,4.0,Dc
+Difensore,Calvani,,Frosinone,4.0,Dc
+Difensore,Mitaj,,Genoa,4.0,Ds;E
+Difensore,Gatti,,Juventus,4.0,Dc
+Difensore,Siebert,,Lecce,4.0,Dc
+Difensore,Delli Carri,,Monza,4.0,Dc
+Difensore,Lucchesi,,Monza,4.0,Dc
+Difensore,Birindelli,,Monza,4.0,Dd;Ds;E
+Difensore,Valenti,,Parma,4.0,Dc
+Difensore,Ghilardi,,Roma,4.0,Dc
+Difensore,Walukiewicz,,Sassuolo,4.0,Dd;Dc
+Difensore,Doig,,Sassuolo,4.0,Ds;E
+Difensore,Comert,,Torino,4.0,Dc
+Difensore,Kabasele,,Udinese,4.0,Dc
+Difensore,Bertola,,Udinese,4.0,Dd;Ds;Dc
+Difensore,Zanoli,,Udinese,4.0,Dd;E
+Difensore,Arizala,,Udinese,4.0,Ds;E
+Difensore,Halhal,,Venezia,4.0,Dc
+Difensore,Correia T.,,Venezia,4.0,Dd;E
+Difensore,Kossounou,,Atalanta,3.0,Dd;Dc
+Difensore,Casale,,Bologna,3.0,Dc
+Difensore,Rodriguez Ju.,,Cagliari,3.0,Ds;Dc
+Difensore,Idrissi R.,,Cagliari,3.0,Ds;E
+Difensore,Ranieri L.,,Fiorentina,3.0,Ds;Dc
+Difensore,Joao Mario,,Fiorentina,3.0,Dd;E
+Difensore,Akpoguma,,Frosinone,3.0,Dc
+Difensore,Cittadini,,Frosinone,3.0,Dc
+Difensore,Provstgaard,,Lazio,3.0,Dc
+Difensore,Floriani Mussolini,,Lazio,3.0,Dd;E
+Difensore,De Winter,,Milan,3.0,Dd;Dc
+Difensore,Athekame,,Milan,3.0,Dd;E
+Difensore,Estupinan,,Milan,3.0,Ds;E
+Difensore,Kouadio,,Monza,3.0,Dd;Dc
+Difensore,Carboni A.,,Monza,3.0,Ds;Dc
+Difensore,Troilo,,Parma,3.0,Dc
+Difensore,Britschgi,,Parma,3.0,Dd;Ds;E
+Difensore,Candè,,Sassuolo,3.0,Ds;Dc
+Difensore,Schingtienne,,Venezia,3.0,Dc
+Difensore,Sverko,,Venezia,3.0,Ds;Dc
+Difensore,Hainaut,,Venezia,3.0,Dd;E
+Difensore,Helland,,Bologna,2.0,Dd;Dc
+Difensore,Alhassane,,Bologna,2.0,Ds;E
+Difensore,Van Der Brempt,,Como,2.0,Dd;E
+Difensore,Otoa,,Genoa,2.0,Dc
+Difensore,Puczka,,Genoa,2.0,Ds;E
+Difensore,Sabelli,,Genoa,2.0,Dd;Ds;E
+Difensore,Lazzari,,Lazio,2.0,Dd;E
+Difensore,Pellegrini Lu.,,Lazio,2.0,Ds;E
+Difensore,Jean,,Lecce,2.0,Dc
+Difensore,Diawara S.,,Milan,2.0,Ds;Dc
+Difensore,Marin R.,,Napoli,2.0,Dc
+Difensore,Biraghi,,Torino,2.0,B;Ds;E
+Difensore,Palma,,Udinese,2.0,Dc
+Difensore,Ebosse,,Udinese,2.0,Ds;Dc
+Difensore,Franjic,,Venezia,2.0,B;Ds;E
+Difensore,Sagrado,,Venezia,2.0,Dd;E
+Difensore,De Silvestri,,Bologna,1.0,Dd;E
+Difensore,Raterink,,Cagliari,1.0,Dd;E
+Difensore,Goldaniga,,Como,1.0,Dc
+Difensore,Cuenca A.,,Como,1.0,Ds;Dc
+Difensore,Amey,,Frosinone,1.0,Dc
+Difensore,Gelli J.,,Frosinone,1.0,Dc
+Difensore,Oyono J.,,Frosinone,1.0,Dd;E
+Difensore,Corrado,,Frosinone,1.0,Ds;E
+Difensore,Matturro,,Genoa,1.0,Ds;Dc
+Difensore,Rugani,,Juventus,1.0,Dc
+Difensore,Cabal,,Juventus,1.0,B;Ds;E
+Difensore,Patric,,Lazio,1.0,Dd;Dc
+Difensore,Perez M.,,Lecce,1.0,Dd;Dc
+Difensore,Ndaba,,Lecce,1.0,Ds;E
+Difensore,Antov,,Monza,1.0,Dc
+Difensore,Bakoune,,Monza,1.0,Dd;E
+Difensore,Marianucci,,Napoli,1.0,Dc
+Difensore,Mazzocchi,,Napoli,1.0,Dd;Ds;E
+Difensore,Ndiaye,,Parma,1.0,Dc
+Difensore,Carboni F.,,Parma,1.0,Ds;E
+Difensore,Ziolkowski,,Roma,1.0,Dc
+Difensore,Missori,,Sassuolo,1.0,Dd;E
+Difensore,Pieragnolo,,Sassuolo,1.0,Ds;E
+Difensore,Mlacic,,Udinese,1.0,Dc
+Difensore,Abankwah,,Udinese,1.0,Dd;Dc
+Difensore,Gomes,,Venezia,1.0,Ds;Dc
+Centrocampista,Paz N.,,Como,30.0,T;A
+Centrocampista,McTominay,,Napoli,28.0,C;T
+Centrocampista,Calhanoglu,,Inter,27.0,M;C
+Centrocampista,Orsolini,,Bologna,26.0,W;A
+Centrocampista,Pulisic,,Milan,25.0,T;A
+Centrocampista,Rabiot,,Milan,22.0,C;T
+Centrocampista,Baturina,,Como,19.0,T
+Centrocampista,Da Cunha,,Como,18.0,C;T
+Centrocampista,Zaniolo,,Udinese,18.0,T;A
+Centrocampista,Atta,,Fiorentina,17.0,C;T
+Centrocampista,Barella,,Inter,17.0,C
+Centrocampista,McKennie,,Juventus,17.0,C
+Centrocampista,Zaccagni,,Lazio,16.0,W;A
+Centrocampista,De Bruyne,,Napoli,15.0,T
+Centrocampista,Vlasic,,Torino,14.0,T
+Centrocampista,Gudmundsson A.,,Fiorentina,13.0,T;A
+Centrocampista,Taylor K.,,Lazio,13.0,C;T
+Centrocampista,Ederson D.S.,,Atalanta,12.0,M;C
+Centrocampista,Samardzic,,Atalanta,12.0,C;T
+Centrocampista,Rodriguez Je.,,Como,12.0,W;A
+Centrocampista,Alajbegovic,,Juventus,12.0,W;T
+Centrocampista,Conceicao,,Juventus,12.0,W;A
+Centrocampista,Modric,,Milan,12.0,M;C
+Centrocampista,Rowe,,Bologna,11.0,W;T
+Centrocampista,Baldanzi,,Genoa,11.0,T
+Centrocampista,Zambo Anguissa,,Napoli,11.0,C
+Centrocampista,Perrone,,Como,10.0,M;C
+Centrocampista,Zielinski,,Inter,10.0,C
+Centrocampista,Thuram K.,,Juventus,10.0,C
+Centrocampista,Saelemaekers,,Milan,10.0,E;W
+Centrocampista,Politano,,Napoli,10.0,W
+Centrocampista,Konè M.,,Roma,10.0,M;C
+Centrocampista,Thorstvedt,,Sassuolo,10.0,C;T
+Centrocampista,Casadei,,Torino,10.0,C;T
+Centrocampista,Ekkelenkamp,,Udinese,10.0,C;T
+Centrocampista,Pasalic,,Atalanta,9.0,C;T
+Centrocampista,Bernardeschi,,Bologna,9.0,W;T
+Centrocampista,Mandragora,,Fiorentina,9.0,C
+Centrocampista,Cancellieri,,Lazio,9.0,W;A
+Centrocampista,Isaksen,,Lazio,9.0,W;A
+Centrocampista,Konè I.,,Sassuolo,9.0,C
+Centrocampista,Odgaard,,Bologna,8.0,T
+Centrocampista,Cambiaghi,,Bologna,8.0,W;A
+Centrocampista,Fagioli,,Fiorentina,8.0,M;C
+Centrocampista,Ndour,,Fiorentina,8.0,C
+Centrocampista,Diouf,,Inter,8.0,E;C
+Centrocampista,Sucic P.,,Inter,8.0,C
+Centrocampista,Locatelli,,Juventus,8.0,M;C
+Centrocampista,Colpani,,Monza,8.0,T
+Centrocampista,Vergara,,Napoli,8.0,W;T
+Centrocampista,Cristante,,Roma,8.0,M;C
+Centrocampista,Gaetano,,Atalanta,7.0,M;C
+Centrocampista,Ferguson,,Bologna,7.0,M;C
+Centrocampista,Fazzini,,Cagliari,7.0,C;T
+Centrocampista,Calò,,Frosinone,7.0,M;C
+Centrocampista,Frendrup,,Genoa,7.0,M;C
+Centrocampista,Frattesi,,Inter,7.0,C;T
+Centrocampista,Pessina,,Monza,7.0,M;C
+Centrocampista,Lobotka,,Napoli,7.0,M;C
+Centrocampista,Bernabè,,Parma,7.0,C
+Centrocampista,Volpato,,Sassuolo,7.0,W;T
+Centrocampista,Oristanio,,Torino,7.0,W;T
+Centrocampista,Unai Gomez,,Udinese,7.0,T
+Centrocampista,Zalewski,,Atalanta,6.0,W
+Centrocampista,Pobega,,Bologna,6.0,M;C
+Centrocampista,Adopo,,Cagliari,6.0,M;C
+Centrocampista,Winks,,Cagliari,6.0,M;C
+Centrocampista,Caqueret,,Como,6.0,C;T
+Centrocampista,Liberali,,Como,6.0,T
+Centrocampista,Oulai,,Fiorentina,6.0,M;C
+Centrocampista,Ellertsson,,Genoa,6.0,E;C
+Centrocampista,Zhegrova,,Juventus,6.0,W
+Centrocampista,Rovella,,Lazio,6.0,M;C
+Centrocampista,Coulibaly L.,,Lecce,6.0,M;C
+Centrocampista,Pierotti,,Lecce,6.0,W
+Centrocampista,Chukwueze,,Milan,6.0,W
+Centrocampista,Akinsanmiro,,Monza,6.0,C
+Centrocampista,Nicolussi Caviglia,,Parma,6.0,M;C
+Centrocampista,Karlstrom,,Udinese,6.0,M;C
+Centrocampista,Basic,,Venezia,6.0,M;C
+Centrocampista,Amondarain,,Bologna,5.0,M;C
+Centrocampista,Romano,,Cagliari,5.0,M;C
+Centrocampista,Felici,,Cagliari,5.0,W
+Centrocampista,Milla,,Como,5.0,M;C
+Centrocampista,Addai,,Como,5.0,W;A
+Centrocampista,Zerbin,,Frosinone,5.0,W
+Centrocampista,Meichtry,,Genoa,5.0,W;T
+Centrocampista,Traorè Hj.,,Genoa,5.0,W;T
+Centrocampista,Mkhitaryan,,Inter,5.0,C
+Centrocampista,Koopmeiners,,Juventus,5.0,C;T
+Centrocampista,Dele-Bashiru,,Lazio,5.0,C;T
+Centrocampista,Berisha M.,,Lecce,5.0,C;T
+Centrocampista,Gandelman,,Lecce,5.0,C;T
+Centrocampista,Fofana Y.,,Milan,5.0,M;C
+Centrocampista,Keita M.,,Parma,5.0,M;C
+Centrocampista,Ondrejka,,Parma,5.0,W;A
+Centrocampista,Pisilli,,Roma,5.0,C
+Centrocampista,Matic,,Sassuolo,5.0,M;C
+Centrocampista,Adzic,,Sassuolo,5.0,C;T
+Centrocampista,Bakola,,Sassuolo,5.0,C;T
+Centrocampista,Cacciamani,,Torino,5.0,E;W
+Centrocampista,Gineitis,,Torino,5.0,M;C
+Centrocampista,Piotrowski,,Udinese,5.0,M;C
+Centrocampista,Busio,,Venezia,5.0,M;C
+Centrocampista,Sohm,,Venezia,5.0,C
+Centrocampista,Perez K.,,Venezia,5.0,C;T
+Centrocampista,De Roon,,Atalanta,4.0,M;C
+Centrocampista,Moro N.,,Bologna,4.0,M;C
+Centrocampista,Prati,,Cagliari,4.0,M;C
+Centrocampista,Fabbian,,Fiorentina,4.0,C;T
+Centrocampista,Cichella,,Frosinone,4.0,M;C
+Centrocampista,Koutsoupias,,Frosinone,4.0,C
+Centrocampista,Amorim,,Genoa,4.0,M;C
+Centrocampista,Luis Henrique,,Inter,4.0,E;W
+Centrocampista,Douglas Luiz,,Juventus,4.0,C
+Centrocampista,Cataldi,,Lazio,4.0,M;C
+Centrocampista,Ngom,,Lecce,4.0,M;C
+Centrocampista,Ricci S.,,Milan,4.0,M;C
+Centrocampista,Jashari,,Milan,4.0,C
+Centrocampista,Loftus-Cheek,,Milan,4.0,C;T
+Centrocampista,Folorunsho,,Napoli,4.0,C;T
+Centrocampista,Almqvist,,Parma,4.0,W;A
+Centrocampista,El Aynaoui,,Roma,4.0,M;C
+Centrocampista,Fitz-Jim,,Torino,4.0,M;C
+Centrocampista,Ilkhan,,Torino,4.0,M;C
+Centrocampista,Njie,,Torino,4.0,W;A
+Centrocampista,Sulemana I.,,Atalanta,3.0,M;C
+Centrocampista,Dominguez B.,,Bologna,3.0,W;A
+Centrocampista,Deiola,,Cagliari,3.0,M;C
+Centrocampista,Brescianini,,Fiorentina,3.0,C;T
+Centrocampista,Gelli F.,,Frosinone,3.0,C;T
+Centrocampista,Fini ,,Frosinone,3.0,W
+Centrocampista,Messias,,Genoa,3.0,W;T
+Centrocampista,Stankovic A.,,Inter,3.0,M;C
+Centrocampista,Miretti,,Juventus,3.0,C;T
+Centrocampista,Colombo L.,,Monza,3.0,M;C
+Centrocampista,Gilmour,,Napoli,3.0,M;C
+Centrocampista,Sorensen O.,,Parma,3.0,C
+Centrocampista,Diallo O.,,Parma,3.0,W;A
+Centrocampista,Aboukhlal,,Torino,3.0,W;A
+Centrocampista,Miller L.,,Udinese,3.0,M;C
+Centrocampista,Helgason,,Venezia,3.0,C;T
+Centrocampista,El Azzouzi O.,,Bologna,2.0,M;C
+Centrocampista,Fadera,,Como,2.0,W
+Centrocampista,Hasa,,Frosinone,2.0,C;T
+Centrocampista,Masini,,Genoa,2.0,M;C
+Centrocampista,Venturino,,Genoa,2.0,W
+Centrocampista,Maleh,,Lecce,2.0,M;C
+Centrocampista,Musah,,Milan,2.0,C;W
+Centrocampista,Ciurria,,Monza,2.0,E;W
+Centrocampista,Ordonez C.,,Parma,2.0,M;C
+Centrocampista,Boloca,,Sassuolo,2.0,M;C
+Centrocampista,Lipani,,Sassuolo,2.0,M;C
+Centrocampista,Chakvetadze,,Udinese,2.0,W;T
+Centrocampista,Duncan,,Venezia,2.0,C
+Centrocampista,Liteta,,Cagliari,1.0,M;C
+Centrocampista,Lahdo,,Como,1.0,C;T
+Centrocampista,El Azzouzi A.,,Frosinone,1.0,M;C
+Centrocampista,Kone B.,,Frosinone,1.0,C
+Centrocampista,Belahyane,,Lazio,1.0,M;C
+Centrocampista,Przyborek,,Lazio,1.0,W;T
+Centrocampista,Gorter,,Lecce,1.0,M;C
+Centrocampista,Kaba,,Lecce,1.0,M;C
+Centrocampista,Fofana Sa.,,Lecce,1.0,M;C
+Centrocampista,Cremaschi,,Parma,1.0,E;C
+Centrocampista,Iannoni,,Sassuolo,1.0,M;C
+Centrocampista,Ilic,,Torino,1.0,C
+Centrocampista,Anjorin,,Torino,1.0,C;T
+Centrocampista,Camara A.,,Udinese,1.0,M;C
+Centrocampista,Zarraga,,Udinese,1.0,M;C
+Centrocampista,Bjarkason,,Venezia,1.0,E;W
+Centrocampista,Dagasso,,Venezia,1.0,C
+Attaccante,Martinez L.,,Inter,35.0,Pc
+Attaccante,Malen,,Roma,34.0,Pc
+Attaccante,Thuram,,Inter,29.0,Pc
+Attaccante,Hojlund,,Napoli,28.0,Pc
+Attaccante,Ramos G.,,Milan,27.0,Pc
+Attaccante,Kolo Muani,,Juventus,26.0,Pc
+Attaccante,Kean,,Fiorentina,25.0,Pc
+Attaccante,Yildiz,,Juventus,23.0,A
+Attaccante,Douvikas,,Como,20.0,Pc
+Attaccante,Scamacca,,Atalanta,19.0,Pc
+Attaccante,Davis K.,,Udinese,19.0,Pc
+Attaccante,Krstovic,,Atalanta,18.0,Pc
+Attaccante,Leao,,Milan,18.0,A
+Attaccante,Berardi,,Sassuolo,18.0,A
+Attaccante,De Ketelaere,,Atalanta,17.0,A
+Attaccante,Dovbyk,,Bologna,16.0,Pc
+Attaccante,Esposito F.P.,,Inter,16.0,Pc
+Attaccante,Pellegrino M.,,Parma,15.0,Pc
+Attaccante,Laurientè,,Sassuolo,15.0,A
+Attaccante,Simeone,,Torino,15.0,Pc
+Attaccante,Santos A.,,Napoli,14.0,W;A
+Attaccante,Dybala,,Roma,14.0,A
+Attaccante,Castro S.,,Roma,14.0,Pc
+Attaccante,Raspadori,,Atalanta,13.0,A
+Attaccante,Esposito Se.,,Cagliari,13.0,A
+Attaccante,Nkunku,,Milan,13.0,A
+Attaccante,Pinamonti,,Sassuolo,13.0,Pc
+Attaccante,Soulè,,Roma,12.0,A
+Attaccante,Adams A.,,Venezia,12.0,Pc
+Attaccante,Diao,,Como,11.0,W;A
+Attaccante,Colombo,,Genoa,11.0,Pc
+Attaccante,Dia,,Lazio,10.0,A
+Attaccante,Ratkov,,Lazio,10.0,Pc
+Attaccante,Lukaku,,Napoli,10.0,Pc
+Attaccante,Bowie,,Sassuolo,10.0,Pc
+Attaccante,Ghedjemis,,Frosinone,9.0,W;A
+Attaccante,David,,Juventus,9.0,Pc
+Attaccante,Geubbels,,Lecce,9.0,Pc
+Attaccante,Cutrone,,Monza,9.0,Pc
+Attaccante,Adams C.,,Torino,9.0,A
+Attaccante,Dallinga,,Bologna,8.0,Pc
+Attaccante,Piccoli,,Fiorentina,8.0,Pc
+Attaccante,Vitinha O.,,Genoa,8.0,A
+Attaccante,Yeboah J.,,Venezia,8.0,A
+Attaccante,Rrahmani Al.,,Venezia,8.0,Pc
+Attaccante,Raimondo,,Frosinone,7.0,Pc
+Attaccante,Bonny,,Inter,7.0,Pc
+Attaccante,Stulic,,Lecce,7.0,Pc
+Attaccante,Zapata D.,,Torino,7.0,Pc
+Attaccante,Sulemana K.,,Atalanta,6.0,A
+Attaccante,Mutandwa,,Cagliari,6.0,Pc
+Attaccante,Boga,,Juventus,6.0,W;A
+Attaccante,Noslin,,Lazio,6.0,A
+Attaccante,Gimenez,,Milan,6.0,Pc
+Attaccante,Neres,,Napoli,6.0,W;A
+Attaccante,Maldini,,Atalanta,5.0,T;A
+Attaccante,Camarda,,Milan,5.0,Pc
+Attaccante,Mota,,Monza,5.0,A
+Attaccante,Frigan,,Parma,5.0,A
+Attaccante,Adorante,,Venezia,5.0,Pc
+Attaccante,Borrelli,,Cagliari,4.0,Pc
+Attaccante,Mendy P.,,Cagliari,4.0,Pc
+Attaccante,Morata,,Como,4.0,Pc
+Attaccante,Kvernadze,,Frosinone,4.0,W;A
+Attaccante,Havel,,Genoa,4.0,Pc
+Attaccante,Giovane,,Napoli,4.0,A
+Attaccante,Kulenovic,,Torino,4.0,Pc
+Attaccante,Gueye,,Udinese,4.0,Pc
+Attaccante,Kuhn,,Como,3.0,W;A
+Attaccante,Ekhator,,Juventus,3.0,A
+Attaccante,N'Dri,,Lecce,3.0,W;A
+Attaccante,Varela G.,,Monza,3.0,Pc
+Attaccante,Lang,,Napoli,3.0,A
+Attaccante,Lucca,,Napoli,3.0,Pc
+Attaccante,Elphege,,Parma,3.0,Pc
+Attaccante,Petagna,,Monza,2.0,Pc
+Attaccante,Buksa ,,Udinese,2.0,Pc
+Attaccante,Albarracin,,Cagliari,1.0,A
+Attaccante,Trepy,,Cagliari,1.0,Pc
+Attaccante,Azon,,Como,1.0,Pc
+Attaccante,Vaz,,Roma,1.0,Pc
+Attaccante,Moro L.,,Sassuolo,1.0,Pc
+Attaccante,Bayo V.,,Udinese,1.0,Pc
+Attaccante,Lisman,,Venezia,1.0,W;A
+Attaccante,Lauberbach,,Venezia,1.0,Pc

@@ -1,0 +1,292 @@
+// ============================================================================
+// FantaFanta Patti — logica condivisa tra pagina partecipante e pagina admin.
+// ============================================================================
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+import {
+  getFirestore, connectFirestoreEmulator,
+} from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+import {
+  getAuth, connectAuthEmulator,
+} from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+import { firebaseConfig } from "./firebase-config.js";
+
+export const app = initializeApp(firebaseConfig);
+export const db = getFirestore(app);
+export const auth = getAuth(app);
+
+// Aggiungendo ?emulator=1 all'indirizzo si collega agli emulatori locali di
+// Firebase invece che al progetto vero (usato solo per i test, non per la
+// lega reale).
+const USE_EMULATOR = new URLSearchParams(location.search).has("emulator");
+if (USE_EMULATOR) {
+  connectFirestoreEmulator(db, "127.0.0.1", 8080);
+  connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
+  console.warn("FantaFanta Patti: collegato all'EMULATORE locale, non al progetto reale.");
+}
+
+// ----------------------------------------------------------------------------
+// Costanti di dominio
+// ----------------------------------------------------------------------------
+
+export const ROLE_ORDER = ["Portiere", "Difensore", "Centrocampista", "Attaccante"];
+
+export const ROLE_SHORT = {
+  Portiere: "P", Difensore: "D", Centrocampista: "C", Attaccante: "A",
+};
+
+export const ROLE_ICON = {
+  Portiere: "🧤", Difensore: "🛡️", Centrocampista: "⚙️", Attaccante: "⚔️",
+};
+
+export const ROLE_CLASS = {
+  Portiere: "role-p", Difensore: "role-d", Centrocampista: "role-c", Attaccante: "role-a",
+};
+
+export const DEFAULT_ROSTER_RULES = {
+  portiereMin: 3, portiereMax: 5, totaleMin: 26, totaleMax: 34,
+};
+
+export const DEFAULT_CONFIG = {
+  leagueName: "FantaFanta Patti",
+  budget: 500,
+  bidTimerSeconds: 12,
+  openTimerSeconds: 25,
+  increments: [1, 5, 10],
+};
+
+// ----------------------------------------------------------------------------
+// Helper generici
+// ----------------------------------------------------------------------------
+
+export function slugify(name) {
+  return String(name)
+    .trim()
+    .toLowerCase()
+    .normalize("NFD").replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "") || "squadra";
+}
+
+export function fullName(player) {
+  if (!player) return "";
+  return [player.cognome, player.nome].filter(Boolean).join(" ");
+}
+
+export function formatCredits(n) {
+  if (n === null || n === undefined) return "—";
+  return Math.round(n).toLocaleString("it-IT");
+}
+
+/** Colore semaforo in base ai crediti residui rispetto al budget iniziale,
+ * come nello strumento desktop (verde/giallo/rosso). */
+export function creditColor(remaining, budget) {
+  if (budget <= 0) return "var(--ok)";
+  const pct = remaining / budget;
+  if (remaining < 0) return "var(--danger)";
+  if (pct <= 0.15) return "var(--danger)";
+  if (pct <= 0.35) return "var(--warn)";
+  return "var(--ok)";
+}
+
+/** Stato di completamento rosa di una squadra rispetto alle regole correnti. */
+export function rosterStatus(team, rules) {
+  rules = rules || DEFAULT_ROSTER_RULES;
+  const roster = team.roster || [];
+  const countRole = (r) => roster.filter((p) => p.ruolo === r).length;
+  const portieri = countRole("Portiere");
+  const totale = roster.length;
+
+  const missing = [];
+  const mancanoPortieri = Math.max(0, rules.portiereMin - portieri);
+  if (mancanoPortieri > 0) {
+    missing.push(`${mancanoPortieri} ${mancanoPortieri === 1 ? "Portiere" : "Portieri"}`);
+  }
+  const mancanoTotale = Math.max(0, rules.totaleMin - totale);
+  if (mancanoTotale > 0) {
+    missing.push(`${mancanoTotale} giocatori (min. rosa)`);
+  }
+
+  const postiRimasti = Math.max(0, rules.totaleMax - totale);
+  const portieriMancanti = Math.max(0, rules.portiereMin - portieri);
+  const rischioPortieri = portieriMancanti > 0 && portieriMancanti >= postiRimasti;
+
+  return {
+    portieri, totale,
+    complete: portieri >= rules.portiereMin && totale >= rules.totaleMin,
+    missing,
+    rischioPortieri,
+    roleFull: (ruolo) => {
+      if (totale >= rules.totaleMax) return true;
+      if (ruolo === "Portiere") return portieri >= rules.portiereMax;
+      return false;
+    },
+  };
+}
+
+export function formatCountdown(msRemaining) {
+  const s = Math.max(0, Math.ceil(msRemaining / 1000));
+  return String(s);
+}
+
+/** Testo/colore per l'anello del timer, condiviso tra pagina partecipante e admin. */
+export function ringDisplay(state) {
+  if (!state) return { label: "—", cls: "ok" };
+  if (state.status === "bidding" && state.timerEndsAt) {
+    const endsAt = state.timerEndsAt.toMillis ? state.timerEndsAt.toMillis() : state.timerEndsAt;
+    const secs = Math.max(0, Math.ceil((endsAt - Date.now()) / 1000));
+    return { label: String(secs), cls: secs <= 5 ? "low" : secs <= 10 ? "mid" : "ok" };
+  }
+  if (state.status === "paused") {
+    const secs = Math.max(0, Math.ceil((state.pausedRemainingMs || 0) / 1000));
+    return { label: secs + "⏸", cls: "mid" };
+  }
+  return { label: "—", cls: "ok" };
+}
+
+export function escapeHtml(s) {
+  return String(s ?? "").replace(/[&<>"']/g, (c) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+  }[c]));
+}
+
+// ----------------------------------------------------------------------------
+// Parsing CSV listone (stesso formato del programma desktop:
+// ruolo,cognome,nome,squadra,quotazione,ruolo_mantra — ordine colonne libero,
+// cerca per nome come converti_listone.py)
+// ----------------------------------------------------------------------------
+
+export function parseListoneCsv(text) {
+  const rows = parseCsvRows(text);
+  if (rows.length === 0) return { players: [], errors: ["File vuoto."] };
+
+  const header = rows[0].map((h) => String(h).trim().toLowerCase());
+  const idx = (names) => {
+    for (const n of names) {
+      const i = header.indexOf(n);
+      if (i !== -1) return i;
+    }
+    return -1;
+  };
+
+  const iRuolo = idx(["ruolo"]);
+  const iCognome = idx(["cognome"]);
+  const iNome = idx(["nome"]);
+  const iSquadra = idx(["squadra"]);
+  const iQuot = idx(["quotazione", "qt.a", "quota"]);
+  const iMantra = idx(["ruolo_mantra", "ruolomantra", "mantra"]);
+
+  const errors = [];
+  if (iRuolo === -1 || iCognome === -1) {
+    errors.push("Intestazione non riconosciuta: servono almeno le colonne 'ruolo' e 'cognome'.");
+    return { players: [], errors };
+  }
+
+  const ROLE_MAP = {
+    p: "Portiere", portiere: "Portiere",
+    d: "Difensore", difensore: "Difensore",
+    c: "Centrocampista", centrocampista: "Centrocampista",
+    a: "Attaccante", attaccante: "Attaccante",
+  };
+
+  const players = [];
+  for (let r = 1; r < rows.length; r++) {
+    const row = rows[r];
+    if (!row || row.every((c) => String(c).trim() === "")) continue;
+    const ruoloRaw = String(row[iRuolo] ?? "").trim().toLowerCase();
+    const ruolo = ROLE_MAP[ruoloRaw];
+    const cognome = String(row[iCognome] ?? "").trim();
+    if (!ruolo || !cognome) continue;
+    players.push({
+      ruolo,
+      cognome,
+      nome: iNome !== -1 ? String(row[iNome] ?? "").trim() : "",
+      squadra: iSquadra !== -1 ? String(row[iSquadra] ?? "").trim() : "",
+      quotazione: iQuot !== -1 ? (row[iQuot] ?? "") : "",
+      ruoloMantra: iMantra !== -1 ? String(row[iMantra] ?? "").trim() : "",
+      status: "available",
+      assignedTeam: null,
+      price: null,
+    });
+  }
+  if (players.length === 0) errors.push("Nessun calciatore valido trovato nel file.");
+  return { players, errors };
+}
+
+/** Parser CSV minimale ma robusto a virgolette e virgole dentro ai campi. */
+function parseCsvRows(text) {
+  const rows = [];
+  let row = [];
+  let field = "";
+  let inQuotes = false;
+  const s = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (s[i + 1] === '"') { field += '"'; i++; } else { inQuotes = false; }
+      } else {
+        field += c;
+      }
+    } else if (c === '"') {
+      inQuotes = true;
+    } else if (c === ",") {
+      row.push(field); field = "";
+    } else if (c === "\n") {
+      row.push(field); field = "";
+      rows.push(row); row = [];
+    } else {
+      field += c;
+    }
+  }
+  if (field.length > 0 || row.length > 0) { row.push(field); rows.push(row); }
+  return rows.filter((r) => r.length > 1 || (r.length === 1 && r[0] !== ""));
+}
+
+// ----------------------------------------------------------------------------
+// Mescolamento (Fisher-Yates), come "Mescola tutto" nello strumento desktop.
+// ----------------------------------------------------------------------------
+export function shuffle(array) {
+  const a = array.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// ----------------------------------------------------------------------------
+// Esportazione CSV per l'importazione rose su Leghe Fantacalcio.
+// Colonne verificate come accettate dall'importatore: Calciatore, Fantasquadra,
+// Prezzo (più Ruolo e Squadra, opzionali ma utili).
+// ----------------------------------------------------------------------------
+export function buildLegheFantacalcioCsv(teams) {
+  const lines = [["Ruolo", "Calciatore", "Squadra", "Fantasquadra", "Prezzo"]];
+  for (const team of teams) {
+    for (const p of (team.roster || [])) {
+      lines.push([
+        ROLE_SHORT[p.ruolo] || p.ruolo || "",
+        fullName(p),
+        p.squadraReale || p.squadra || "",
+        team.name,
+        p.price ?? "",
+      ]);
+    }
+  }
+  return lines.map((r) => r.map(csvEscape).join(",")).join("\r\n");
+}
+
+function csvEscape(v) {
+  const s = String(v ?? "");
+  if (/[",\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+  return s;
+}
+
+export function downloadTextFile(filename, text, mime = "text/csv;charset=utf-8") {
+  const blob = new Blob(["﻿" + text], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+}

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>FantaFanta Patti — Admin</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <div class="topbar">
+    <div class="brand">🛠️ FantaFanta Patti <span class="sub">Pannello admin</span></div>
+    <div class="row center">
+      <span id="connDot" class="pill">● collegamento…</span>
+      <button id="btnSignOut" class="btn ghost hidden">Esci</button>
+    </div>
+  </div>
+
+  <!-- ============ LOGIN ============ -->
+  <div id="loginView" class="card hidden" style="max-width:380px; margin:40px auto;">
+    <h2>Accesso admin</h2>
+    <label for="loginEmail">Email</label>
+    <input type="email" id="loginEmail" autocomplete="username" />
+    <label for="loginPass">Password</label>
+    <input type="password" id="loginPass" autocomplete="current-password" />
+    <p id="loginError" class="small" style="color:var(--danger); min-height:1.2em;"></p>
+    <button id="btnSignIn" class="btn primary block mt">Entra</button>
+  </div>
+
+  <!-- ============ ADMIN ============ -->
+  <div id="adminView" class="hidden">
+
+    <!-- Setup -->
+    <div class="card">
+      <h3>1. Configurazione asta</h3>
+      <p class="small">Carica il listone (stesso formato del programma da tavolo: <code>ruolo,cognome,nome,squadra,quotazione,ruolo_mantra</code>) e imposta squadre, crediti e regole rosa. Premendo "Inizializza" si RIPARTE da zero: rose e crediti attuali vengono azzerati.</p>
+
+      <label for="csvFile">Listone (file .csv)</label>
+      <input type="file" id="csvFile" accept=".csv,text/csv" />
+      <p id="csvSummary" class="small"></p>
+
+      <label for="teamsTextarea">Squadre (una per riga)</label>
+      <textarea id="teamsTextarea" rows="6" style="width:100%; background:var(--panel-2); border:1px solid var(--border); color:var(--text); border-radius:10px; padding:10px; font:inherit;" placeholder="Squadra 1
+Squadra 2
+..."></textarea>
+
+      <div class="row">
+        <div class="grow"><label for="budgetInput">Crediti per squadra</label><input type="number" id="budgetInput" value="500" /></div>
+        <div class="grow"><label for="openTimerInput">Timer apertura (sec)</label><input type="number" id="openTimerInput" value="25" /></div>
+        <div class="grow"><label for="bidTimerInput">Timer dopo rilancio (sec)</label><input type="number" id="bidTimerInput" value="12" /></div>
+      </div>
+      <div class="row">
+        <div class="grow"><label for="pMinInput">Portieri min</label><input type="number" id="pMinInput" value="3" /></div>
+        <div class="grow"><label for="pMaxInput">Portieri max</label><input type="number" id="pMaxInput" value="5" /></div>
+        <div class="grow"><label for="totMinInput">Rosa totale min</label><input type="number" id="totMinInput" value="26" /></div>
+        <div class="grow"><label for="totMaxInput">Rosa totale max</label><input type="number" id="totMaxInput" value="34" /></div>
+      </div>
+
+      <p id="setupError" class="small" style="color:var(--danger); min-height:1.2em;"></p>
+      <div class="row mt">
+        <button id="btnInit" class="btn primary grow">🚀 Inizializza / Reinizializza asta (azzera rose e crediti)</button>
+      </div>
+      <div class="row">
+        <button id="btnQuickUpdate" class="btn grow">💾 Aggiorna solo timer/regole (senza toccare rose)</button>
+      </div>
+      <p class="small" id="setupStatus"></p>
+    </div>
+
+    <!-- Controllo live -->
+    <div class="card">
+      <h3>2. Controllo asta live</h3>
+      <div class="row between">
+        <span class="badge-count" id="adminProgress">—</span>
+        <span class="pill" id="adminStatusPill">stato: —</span>
+      </div>
+
+      <div class="stage" style="margin-top:12px;">
+        <div id="adminStagePlayer">
+          <span id="adminRoleBadge" class="role-badge"></span>
+          <div class="player-name" id="adminPlayerName">Nessun giocatore in asta</div>
+          <div class="player-meta" id="adminPlayerMeta"></div>
+          <div class="bid-display">
+            <div>
+              <div class="bid-amount" id="adminCurrentBid">0</div>
+              <div class="bid-team" id="adminCurrentBidTeam">—</div>
+            </div>
+            <div id="adminTimerRing" class="timer-ring ok">—</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <button id="btnNext" class="btn primary big grow">🎲 Prossimo</button>
+        <button id="btnAssignNow" class="btn ok big grow">✅ Assegna ora</button>
+      </div>
+      <div class="row mt">
+        <button id="btnMarkUnsold" class="btn grow">🚫 Nessuna offerta</button>
+        <button id="btnPause" class="btn grow">⏸ Pausa</button>
+        <button id="btnUndo" class="btn danger grow">↩️ Annulla ultima assegnazione</button>
+      </div>
+    </div>
+
+    <!-- Squadre & correzioni -->
+    <div class="card">
+      <h3>3. Squadre e correzioni manuali</h3>
+      <p class="small">Per correggere un errore: cambia i crediti a mano, rimuovi un giocatore da una rosa (i crediti vengono restituiti), oppure assegna manualmente un giocatore a una squadra (utile a fine asta per gli svincolati non assegnati).</p>
+      <div id="teamsAdminList"></div>
+
+      <div class="card" style="background:var(--panel-2); margin-top:14px;">
+        <h4 style="margin-top:0;">Assegna manualmente un giocatore</h4>
+        <div class="row">
+          <input type="text" id="manualPlayerSearch" placeholder="Cerca calciatore per cognome…" class="grow" />
+        </div>
+        <div id="manualPlayerResults" class="small" style="max-height:160px; overflow-y:auto; margin-top:6px;"></div>
+        <div class="row mt">
+          <select id="manualTeamSelect" class="grow"></select>
+          <input type="number" id="manualPriceInput" placeholder="Prezzo" style="max-width:110px;" />
+          <button id="btnManualAssign" class="btn primary">Assegna</button>
+        </div>
+        <p id="manualAssignError" class="small" style="color:var(--danger); min-height:1.2em;"></p>
+      </div>
+    </div>
+
+    <!-- Esportazione -->
+    <div class="card">
+      <h3>4. Esportazione</h3>
+      <p class="small">Genera il file CSV da caricare direttamente nell'importazione rose della tua lega su Leghe Fantacalcio.</p>
+      <button id="btnExport" class="btn primary block">⬇️ Scarica CSV Leghe Fantacalcio</button>
+    </div>
+
+    <div class="card" style="border-color: var(--danger);">
+      <h3 style="color:var(--danger);">Zona pericolosa</h3>
+      <button id="btnWipe" class="btn danger">🗑️ Cancella tutti i dati (listone, squadre, stato)</button>
+    </div>
+
+  </div>
+</div>
+
+<script type="module" src="js/admin.js"></script>
+</body>
+</html>

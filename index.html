@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+<title>FantaFanta Patti — Asta live</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <div class="topbar">
+    <div class="brand">🏆 <span id="leagueName">FantaFanta Patti</span><span class="sub">Asta live</span></div>
+    <div class="row center">
+      <span id="connDot" class="pill">● collegamento…</span>
+      <button id="btnChangeTeam" class="btn ghost hidden">Cambia squadra</button>
+    </div>
+  </div>
+
+  <!-- ============ SELEZIONE SQUADRA ============ -->
+  <div id="selectView" class="card hidden">
+    <h2>Scegli la tua squadra</h2>
+    <p class="small">Nessuna password: seleziona semplicemente il nome della tua squadra per entrare nell'asta live. La scelta resta salvata su questo dispositivo.</p>
+    <div id="teamSelectList" class="select-list"></div>
+  </div>
+
+  <!-- ============ ATTESA CONFIG ============ -->
+  <div id="waitingView" class="card hidden center-text">
+    <h2>In attesa che l'admin avvii l'asta…</h2>
+    <p class="small">Questa pagina si aggiornerà da sola non appena l'asta sarà configurata.</p>
+  </div>
+
+  <!-- ============ VISTA LIVE ============ -->
+  <div id="liveView" class="hidden">
+
+    <div class="card row between">
+      <div>
+        <div class="small">La tua squadra</div>
+        <div style="font-size:1.3rem; font-weight:800;" id="myTeamName">—</div>
+      </div>
+      <div style="text-align:right;">
+        <div class="small">Crediti residui</div>
+        <div style="font-size:1.7rem; font-weight:900;" id="myTeamCredits">—</div>
+      </div>
+    </div>
+
+    <div id="statusBanner" class="status-banner idle hidden"></div>
+
+    <div class="stage">
+      <div id="stageEmpty" class="hidden">
+        <h2>In attesa del prossimo giocatore…</h2>
+        <p class="player-meta" id="progressText"></p>
+      </div>
+      <div id="stageFinished" class="hidden">
+        <h2>🏁 Asta terminata!</h2>
+        <p class="player-meta">Tutti i calciatori del listone sono stati chiamati.</p>
+      </div>
+      <div id="stagePlayer" class="hidden">
+        <span id="playerRoleBadge" class="role-badge"></span>
+        <div class="player-name" id="playerName">—</div>
+        <div class="player-meta" id="playerMeta">—</div>
+
+        <div class="bid-display">
+          <div>
+            <div class="bid-amount" id="currentBid">0</div>
+            <div class="bid-team" id="currentBidTeam">Nessuna offerta</div>
+          </div>
+          <div id="timerRing" class="timer-ring ok">—</div>
+        </div>
+
+        <div class="bid-buttons" id="bidButtons">
+          <button class="btn primary" data-delta="1">+1</button>
+          <button class="btn primary" data-delta="5">+5</button>
+          <button class="btn primary" data-delta="10">+10</button>
+          <button class="btn" id="btnAltro">Altro…</button>
+        </div>
+        <p id="bidError" class="small" style="color:var(--danger); min-height:1.2em; margin-top:10px;"></p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="row between">
+        <h3>Squadre</h3>
+        <span class="badge-count" id="progressBadge"></span>
+      </div>
+      <div class="teams-grid" id="teamsGrid"></div>
+    </div>
+
+    <div class="card">
+      <h3>Ultime assegnazioni</h3>
+      <div class="ticker" id="ticker"><span class="small">Nessuna ancora.</span></div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- Modal: rosa squadra -->
+<div id="rosterModalBackdrop" class="modal-backdrop hidden">
+  <div class="modal">
+    <div class="row between">
+      <h3 id="rosterModalTitle">Rosa</h3>
+      <button class="btn ghost" id="rosterModalClose">✕</button>
+    </div>
+    <div id="rosterModalBody" class="roster-list"></div>
+  </div>
+</div>
+
+<!-- Modal: offerta personalizzata -->
+<div id="altroModalBackdrop" class="modal-backdrop hidden">
+  <div class="modal" style="max-width:360px;">
+    <h3>Offerta personalizzata</h3>
+    <label for="altroInput">Importo (crediti)</label>
+    <input type="number" id="altroInput" min="1" step="1" />
+    <p id="altroError" class="small" style="color:var(--danger); min-height:1.2em;"></p>
+    <div class="row mt">
+      <button class="btn ghost grow" id="altroCancel">Annulla</button>
+      <button class="btn primary grow" id="altroConfirm">Rilancia</button>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
