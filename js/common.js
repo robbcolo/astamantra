@@ -257,6 +257,17 @@ export function rosterStatus(team, rules) {
     complete: portieri >= rules.portiereMin && totale >= rules.totaleMin,
     missing,
     rischioPortieri,
+    // Il numero di portieri va evidenziato (in rosso) quando è ancora sotto
+    // il minimo richiesto oppure ha già raggiunto il massimo consentito: in
+    // entrambi i casi la squadra non può più comprare/deve ancora comprare
+    // portieri, quindi merita attenzione a colpo d'occhio.
+    portieriOutOfRange: portieri < rules.portiereMin || portieri >= rules.portiereMax,
+    // Il numero di giocatori di movimento non ha un proprio minimo/massimo
+    // indipendente: segue lo stesso limite della rosa totale (il minimo
+    // "movimento" implicito è totaleMin-portieriMax, il massimo è
+    // totaleMax-portieriMin), quindi lo evidenziamo quando la rosa totale è
+    // ancora sotto il minimo complessivo o ha già raggiunto il massimo.
+    movimentoOutOfRange: totale < rules.totaleMin || totale >= rules.totaleMax,
     roleFull: (ruolo) => {
       if (totale >= rules.totaleMax) return true;
       if (ruolo === "Portiere") return portieri >= rules.portiereMax;

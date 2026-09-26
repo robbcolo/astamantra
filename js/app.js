@@ -550,17 +550,21 @@ function renderBidButtons() {
   const rs = rosterStatus(myTeam, rules);
   const roleFull = rs.roleFull(currentPlayer.ruolo);
 
+  // Una volta raggiunto il limite (di ruolo o di rosa totale) la squadra non
+  // può più fare offerte per QUEL calciatore: i pulsanti restano disabilitati
+  // finché non si passa a un calciatore di un ruolo ancora aperto, non è più
+  // solo un avviso che si può ignorare.
   errorEl.textContent = iAmLeading
     ? "Stai già rilanciando tu su questo giocatore."
-    : roleFull ? "Attenzione: la tua rosa è già al completo per questo ruolo/totale."
+    : roleFull ? "La tua rosa ha già raggiunto il limite per questo ruolo/totale: non puoi fare offerte per questo calciatore."
     : "";
 
   container.querySelectorAll("button[data-delta]").forEach((b) => {
     const delta = Number(b.dataset.delta);
     const newBid = (state.currentBid || 0) + delta;
-    b.disabled = iAmLeading || newBid > myTeam.credits;
+    b.disabled = iAmLeading || roleFull || newBid > myTeam.credits;
   });
-  $("btnAltro").disabled = iAmLeading;
+  $("btnAltro").disabled = iAmLeading || roleFull;
 }
 
 $("bidButtons").addEventListener("click", (e) => {
@@ -657,7 +661,7 @@ function renderTeams() {
         <span class="tp-roles">${badges}</span>
         ${logoImg}
         <span class="tp-name">${escapeHtml(fullName(p))}</span>
-        <span class="tp-price"><span class="tp-price-coin">🥇</span>${formatCredits(p.price)}</span>
+        <span class="tp-price">${formatCredits(p.price)}</span>
       </div>`;
     }).join("");
     const online = team.id === myTeamId ? true : isTeamOnline(team);
@@ -671,8 +675,8 @@ function renderTeams() {
       </div>
       <div class="tp-list">${rows}</div>
       <div class="t-foot">
-        <span class="t-foot-chip mp" title="Portieri acquistati">🧤 ${rs.portieri}</span>
-        <span class="t-foot-chip mov" title="Giocatori di movimento acquistati">⚙️ ${rs.movimento}</span>
+        <span class="t-foot-chip mp" title="Portieri acquistati">🧤 <span class="${rs.portieriOutOfRange ? "t-foot-num-warn" : ""}">${rs.portieri}</span></span>
+        <span class="t-foot-chip mov" title="Giocatori di movimento acquistati">⚙️ <span class="${rs.movimentoOutOfRange ? "t-foot-num-warn" : ""}">${rs.movimento}</span></span>
         <span class="t-foot-budget" style="color:${creditColor(team.credits, budget)}" title="Crediti residui">${formatCredits(team.credits)}</span>
         <span class="t-foot-max" title="Massimo spendibile su un giocatore restando in regola">MAX ${formatCredits(rs.maxSpendibile)}</span>
       </div>
@@ -710,8 +714,13 @@ function renderCreditsSummary(names, budget) {
     const isMe = team.id === myTeamId;
     const isLeading = state && state.currentBidTeam === team.id;
     const online = isMe ? true : isTeamOnline(team);
+    const rs = rosterStatus(team, rules);
     return `<div class="cs-row${isMe ? " me" : ""}${isLeading ? " leading" : ""}">
       <span class="cs-name"><span class="conn-dot${online ? " online" : ""}" title="${online ? "Collegato" : "Non collegato"}"></span>${escapeHtml(team.name)}</span>
+      <span class="cs-counts">
+        <span class="cs-count-chip mp" title="Portieri acquistati">🧤<span class="${rs.portieriOutOfRange ? "t-foot-num-warn" : ""}">${rs.portieri}</span></span>
+        <span class="cs-count-chip mov" title="Giocatori di movimento acquistati">⚙️<span class="${rs.movimentoOutOfRange ? "t-foot-num-warn" : ""}">${rs.movimento}</span></span>
+      </span>
       <span class="cs-credits" style="color:${creditColor(team.credits, budget)}">${formatCredits(team.credits)}</span>
     </div>`;
   }).join("");
@@ -868,6 +877,7 @@ $("btnInit").onclick = async () => {
       lastSoldTeam: null,
       lastSoldPrice: null,
       lastSoldPlayerName: null,
+      lastResolvedPlayerId: null,
       salesLog: [],
     });
 
@@ -995,29 +1005,51 @@ $("btnPause").onclick = async () => {
   }
 };
 
+// "⬅️ Torna indietro": a differenza della vecchia "Annulla ultima" (che
+// funzionava SOLO se l'ultimo calciatore era stato venduto), questo pulsante
+// torna indietro all'ultimo calciatore RISOLTO qualsiasi sia stato l'esito
+// (assegnato oppure passato senza offerte) e lo rimette in asta, pronto per
+// essere rilanciato/riassegnato da capo — utile quando ci si accorge subito
+// dopo di un errore, senza dover cercare il calciatore nello storico.
 $("btnUndo").onclick = async () => {
-  if (!state || !state.lastSoldPlayerId) { alert("Non c'è nulla da annullare."); return; }
-  const teamName = teamsById.get(state.lastSoldTeam)?.name || state.lastSoldTeam;
-  if (!confirm(`Annullare l'assegnazione di ${state.lastSoldPlayerName} a ${teamName}?`)) return;
+  if (!state || !state.lastResolvedPlayerId) { alert("Non c'è nulla a cui tornare indietro."); return; }
+  const playerId = state.lastResolvedPlayerId;
+  const player = playersById.get(playerId);
+  if (!player) { alert("Il calciatore non è più disponibile (listone modificato?)."); return; }
+
+  const wasSold = player.status === "assigned";
+  const teamName = wasSold ? (teamsById.get(player.assignedTeam)?.name || player.assignedTeam) : null;
+  const msg = wasSold
+    ? `Tornare indietro? L'assegnazione di ${fullName(player)} a ${teamName} verrà annullata e il calciatore tornerà in asta.`
+    : `Tornare indietro? ${fullName(player)} (segnato come "nessuna offerta") tornerà in asta.`;
+  if (!confirm(msg)) return;
+
   try {
-    await unassignPlayer(state.lastSoldPlayerId);
-    const idx = (config?.drawOrder || []).indexOf(state.lastSoldPlayerId);
+    if (wasSold) {
+      await unassignPlayer(playerId);
+    } else {
+      await updateDoc(doc(db, "players", playerId), { status: "available" });
+    }
+    const idx = (config?.drawOrder || []).indexOf(playerId);
+    const timerMs = (config?.openTimerSeconds ?? DEFAULT_CONFIG.openTimerSeconds) * 1000;
+    await updateDoc(doc(db, "players", playerId), { status: "called" });
     await updateDoc(doc(db, "state", "auction"), {
-      status: "idle",
-      currentPlayerId: null,
+      status: "bidding",
+      currentPlayerId: playerId,
       currentBid: 0,
       currentBidTeam: null,
-      timerEndsAt: null,
+      timerEndsAt: Timestamp.fromMillis(Date.now() + timerMs),
       lastSoldPlayerId: null,
       lastSoldTeam: null,
       lastSoldPrice: null,
       lastSoldPlayerName: null,
+      lastResolvedPlayerId: null,
       nextIndex: idx >= 0 ? idx : state.nextIndex,
       calledCount: Math.max(0, (state.calledCount || 0) - 1),
-      salesLog: (state.salesLog || []).slice(1),
+      salesLog: wasSold ? (state.salesLog || []).slice(1) : (state.salesLog || []),
     });
   } catch (e) {
-    alert("Errore durante l'annullamento: " + e.message);
+    alert("Errore durante il ritorno indietro: " + e.message);
   }
 };
 
@@ -1094,15 +1126,18 @@ async function finalizeSale() {
     lastSoldTeam: teamId,
     lastSoldPrice: price,
     lastSoldPlayerName: fullName(player),
+    lastResolvedPlayerId: playerId,
     salesLog: newLog,
   });
 }
 
 async function markUnsold() {
   if (!state || !state.currentPlayerId) return;
-  await updateDoc(doc(db, "players", state.currentPlayerId), { status: "skipped" });
+  const playerId = state.currentPlayerId;
+  await updateDoc(doc(db, "players", playerId), { status: "skipped" });
   await updateDoc(doc(db, "state", "auction"), {
     status: "unsold", lastSoldPlayerId: null, lastSoldTeam: null, lastSoldPrice: null, lastSoldPlayerName: null,
+    lastResolvedPlayerId: playerId,
   });
 }
 
@@ -1181,7 +1216,10 @@ function renderControl() {
   $("btnMarkUnsold").disabled = state.status !== "bidding";
   $("btnCancelCall").disabled = !["bidding", "paused"].includes(state.status) || !state.currentPlayerId;
   $("btnManualBid").disabled = state.status !== "bidding";
-  $("btnUndo").disabled = !state.lastSoldPlayerId;
+  // "Torna indietro" ha senso solo quando non c'è già un'asta aperta su un
+  // ALTRO calciatore (stessi stati in cui si può chiamare il prossimo): si
+  // rimette in gioco l'ultimo calciatore risolto, qualsiasi esito abbia avuto.
+  $("btnUndo").disabled = !state.lastResolvedPlayerId || !["idle", "sold", "unsold"].includes(state.status);
 }
 
 // ---------------------------------------------------------------------------
