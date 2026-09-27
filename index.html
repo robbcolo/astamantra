@@ -11,6 +11,13 @@
 
   <div class="topbar">
     <div class="brand">🏆 <span id="leagueName">FantaMantra Patti</span></div>
+    <!-- Il banner di stato ("assegnato a…", "nessuna offerta", "in attesa…")
+         vive qui, nello spazio tra il titolo e i controlli a destra, invece
+         di occupare una riga intera sotto la barra admin: risparmia spazio
+         verticale su tutta la pagina. Su schermi stretti (vedi media query)
+         torna a scendere su una riga propria, perché lì quello spazio non
+         basterebbe comunque. -->
+    <div id="statusBanner" class="status-banner idle hidden"></div>
     <div class="row center">
       <span id="connDot" class="pill">● collegamento…</span>
       <button id="btnChangeTeam" class="btn ghost hidden">Cambia squadra</button>
@@ -38,6 +45,8 @@
       <button id="btnMarkUnsold" class="icon-btn">🚫 Nessuna offerta</button>
       <button id="btnCancelCall" class="icon-btn warn">❌ Annulla chiamata</button>
       <button id="btnPause" class="icon-btn">⏸ Pausa</button>
+      <button id="btnTimerMinus" class="icon-btn" title="Togli 10 secondi al timer in corso su questo calciatore">⏱️ −10s</button>
+      <button id="btnTimerPlus" class="icon-btn" title="Aggiungi 10 secondi al timer in corso su questo calciatore">⏱️ +10s</button>
       <button id="btnUndo" class="icon-btn danger" title="Torna indietro all'ultimo calciatore risolto, sia che sia stato assegnato sia che sia rimasto senza offerte, e lo rimette in asta">⬅️ Torna indietro</button>
       <button id="btnToggleAdvanced" class="icon-btn">⚙️ Impostazioni ▾</button>
     </div>
@@ -149,8 +158,6 @@ Squadra 2
   <!-- ============ VISTA LIVE ============ -->
   <div id="liveView" class="hidden">
 
-    <div id="statusBanner" class="status-banner idle hidden"></div>
-
     <div class="live-top">
       <div class="stage">
         <div id="stageEmpty" class="hidden">
@@ -215,17 +222,31 @@ Squadra 2
       </div>
     </div>
 
-    <div class="card">
-      <div class="teams-tabs-head">
-        <h3>Squadre</h3>
-        <div class="teams-tabs" id="teamsTabs">
-          <button class="teams-tab active" data-tab="rose" id="tabRose">👕 Rose Squadre</button>
-          <button class="teams-tab" data-tab="recap" id="tabRecap">📊 Recap Asta</button>
-        </div>
+    <!-- Lo switch "Rose Squadre"/"Recap Asta" vive qui, nello spazio tra il
+         riquadro crediti e il riquadro squadre, invece che come riga a sé
+         (con tanto di titolo "Squadre") dentro quest'ultimo: così le rose
+         possono partire dal bordo alto del riquadro, risparmiando spazio
+         verticale su tutta la pagina. -->
+    <div class="teams-tabs-bar">
+      <div class="teams-tabs" id="teamsTabs">
+        <button class="teams-tab active" data-tab="rose" id="tabRose">👕 Rose Squadre</button>
+        <button class="teams-tab" data-tab="recap" id="tabRecap">📊 Recap Asta</button>
       </div>
+    </div>
+
+    <div class="card">
       <div class="teams-grid" id="teamsGrid"></div>
       <div id="recapPanel" class="recap-panel hidden">
         <div class="recap-grid">
+          <div class="recap-card" style="grid-column: 1 / -1;">
+            <div class="row between" style="align-items:center; margin-bottom:8px;">
+              <h4 style="margin:0;">🔍 Cerca tra tutti i calciatori</h4>
+              <button id="btnRecapRefresh" class="btn ghost btn-sm">🔄 Aggiorna elenco</button>
+            </div>
+            <input type="text" id="recapPlayerSearch" placeholder="Cerca un calciatore per nome…" />
+            <p class="small" id="recapSearchMeta" style="margin:4px 0 0 0;"></p>
+            <div id="recapSearchResults" class="recap-roster-table" style="margin-top:8px;"></div>
+          </div>
           <div class="recap-card">
             <h4>Riepilogo asta</h4>
             <div class="recap-kv-list" id="recapSummaryList"></div>

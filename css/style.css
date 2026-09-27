@@ -53,8 +53,35 @@ h1, h2, h3 { margin: 0 0 0.4em 0; }
   padding: 10px 4px 16px 4px;
   gap: 10px;
 }
-.topbar .brand { font-weight: 800; font-size: 1.2rem; letter-spacing: 0.2px; }
+.topbar .brand { font-weight: 800; font-size: 1.2rem; letter-spacing: 0.2px; flex: 0 0 auto; }
 .topbar .brand .sub { color: var(--text-dim); font-weight: 400; font-size: 0.8rem; display: block; }
+/* Il banner di stato ("assegnato a…", "in attesa…") occupa lo spazio VUOTO
+   tra il titolo a sinistra e i controlli a destra, invece di una riga
+   intera a sé sotto la barra admin: risparmia spazio verticale su tutta la
+   pagina. Se il testo è lungo va comunque a capo (non lo tronchiamo con
+   ellissi) per non perdere informazioni importanti come nome/squadra/prezzo.
+   Niente flex:0 0 auto su .brand/.row.center oltre al necessario: .row.center
+   deve poter restringersi ed eventualmente andare a capo sui suoi stessi
+   pulsanti (il suo flex-wrap:wrap da .row) su schermi stretti, altrimenti la
+   pagina si allarga con scroll orizzontale invece di incolonnare i controlli. */
+.topbar .status-banner {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0 14px; /* sovrascrive il margin-bottom di .status-banner: qui è in linea, non più una riga a sé */
+}
+@media (max-width: 860px) {
+  /* Sotto gli 860px quello spazio centrale non basterebbe comunque: il
+     banner torna a scendere su una riga propria a piena larghezza, sotto
+     titolo e controlli (che restano affiancati in alto, e possono a loro
+     volta andare a capo sui singoli pulsanti se non entrano). */
+  .topbar { flex-wrap: wrap; }
+  .topbar .row.center { flex: 1 1 auto; min-width: 0; }
+  .topbar .status-banner {
+    order: 3;
+    flex: 1 1 100%;
+    margin: 8px 0 0 0;
+  }
+}
 
 .card {
   background: linear-gradient(180deg, var(--panel), var(--panel) 100%);
@@ -161,7 +188,7 @@ label { font-size: 0.85rem; color: var(--text-dim); display: block; margin: 10px
   grid-template-columns: minmax(0, 3fr) minmax(160px, 0.8fr);
   gap: 12px;
   align-items: start;
-  margin-bottom: 14px;
+  margin-bottom: 8px; /* lo switch rose/recap ora vive subito sotto, in questo spazio */
 }
 @media (max-width: 860px) {
   .live-top { grid-template-columns: 1fr; }
@@ -627,12 +654,14 @@ label { font-size: 0.85rem; color: var(--text-dim); display: block; margin: 10px
 }
 
 /* ---------------- Slider "Rose Squadre" / "Recap Asta" ---------------- */
-.teams-tabs-head {
-  display: flex; align-items: center; justify-content: space-between;
-  flex-wrap: wrap; gap: 10px;
-  margin-bottom: 12px;
+/* Vive TRA il riquadro crediti e il riquadro squadre (non più dentro
+   quest'ultimo insieme a un titolo "Squadre" ora rimosso): una riga sottile,
+   allineata a destra, che recupera lo spazio verticale che prima veniva speso
+   per titolo + margini propri dentro il riquadro squadre. */
+.teams-tabs-bar {
+  display: flex; justify-content: flex-end;
+  margin: 0 0 8px 0;
 }
-.teams-tabs-head h3 { margin: 0; }
 .teams-tabs {
   display: inline-flex;
   background: var(--panel-2);
@@ -659,7 +688,7 @@ label { font-size: 0.85rem; color: var(--text-dim); display: block; margin: 10px
   color: #fff;
 }
 @media (max-width: 560px) {
-  .teams-tabs-head { flex-direction: column; align-items: stretch; }
+  .teams-tabs-bar { justify-content: center; }
   .teams-tabs { justify-content: center; }
 }
 

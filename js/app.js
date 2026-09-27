@@ -41,6 +41,19 @@ let unsubPlayer = null;
 let unsubPlayers = null;
 let kickedOut = false; // true se un altro dispositivo ha preso il controllo della nostra squadra
 
+// Cache per la ricerca "Cerca tra tutti i calciatori" nel Recap Asta: a
+// differenza di playersById (che l'admin tiene sempre sincronizzato in
+// tempo reale con onSnapshot), qui usiamo un getDocs() UNA TANTUM richiesto
+// a mano dal partecipante (apertura del tab Recap o click su "Aggiorna").
+// Dare a OGNI partecipante connesso un ascoltatore live sull'intera
+// collezione players (535 documenti) moltiplicherebbe le letture Firestore
+// per ogni singola modifica durante l'asta — questa cache "a scatti" tiene
+// invece il costo limitato a un fetch quando serve davvero, al prezzo di
+// poter essere leggermente non aggiornata finché non si preme "Aggiorna".
+let recapAllPlayers = null; // array di player, null finché non caricato almeno una volta
+let recapAllPlayersLoadedAt = null;
+let recapPlayersLoading = false;
+
 // Su smartphone le rose delle squadre partono chiuse (solo intestazione +
 // riepilogo) e si aprono al tap, per evitare una pagina lunghissima con le
 // rose di tutte le squadre aperte insieme. Questo Set tiene traccia di QUALI
@@ -217,6 +230,11 @@ function startLive() {
   renderBidButtons();
   renderTeams();
   populateManualTeamSelect();
+  // Il banner di stato ora vive nella topbar e la sua visibilità dipende
+  // anche dal fatto che #liveView sia quella mostrata (vedi renderStage):
+  // va ridisegnato qui esplicitamente, perché nel caso "sottoscrizioni già
+  // attive" nessun nuovo evento Firestore arriverebbe da solo a farlo.
+  renderStage();
   startPresenceHeartbeat();
 }
 
@@ -451,7 +469,13 @@ function renderStage() {
     banner.textContent = `⏸ L'admin ha messo in pausa l'asta`;
     banner.className = "status-banner idle";
   }
-  const showBanner = ["sold", "unsold", "idle", "paused"].includes(state.status);
+  // Il banner ora vive nella topbar (sempre presente nel DOM, anche prima
+  // che sia stata scelta una squadra), quindi la sua visibilità va legata
+  // ANCHE al fatto che la vista live sia davvero quella mostrata in questo
+  // momento: altrimenti comparirebbe già nella schermata "scegli la tua
+  // squadra" o in quella d'attesa, ben prima che abbia senso mostrarlo.
+  const showBanner = ["sold", "unsold", "idle", "paused"].includes(state.status) &&
+    !$("liveView").classList.contains("hidden");
   banner.classList.toggle("hidden", !showBanner);
 
   if (showPlayer && currentPlayer) {
@@ -790,6 +814,10 @@ function setTeamsTab(tab) {
  * ancora scelta una squadra (es. admin non partecipante) mostra un avviso
  * invece di un pannello vuoto fuorviante. */
 function renderRecapPanel() {
+  // La ricerca "Cerca tra tutti i calciatori" ha senso anche prima di aver
+  // scelto una squadra (es. semplice curiosità su un giocatore), quindi la
+  // carichiamo indipendentemente dal resto del pannello sotto.
+  ensureRecapPlayersLoaded();
   const myTeam = myTeamId ? teamsById.get(myTeamId) : null;
   if (!myTeam) {
     $("recapSummaryList").innerHTML = '<p class="small">Scegli una squadra per vedere il tuo recap asta.</p>';
@@ -872,6 +900,88 @@ function renderRecapPanel() {
     </div>`
   ).join("");
 }
+
+/** Carica (una tantum, non in tempo reale) l'intero listone per la ricerca
+ * "Cerca tra tutti i calciatori" nel Recap Asta, visibile a ogni
+ * partecipante. Se è già stato caricato in questa sessione non rifà il
+ * fetch: per un aggiornamento esplicito c'è il pulsante "🔄 Aggiorna
+ * elenco", che richiama refreshRecapPlayers() forzando un nuovo giro. */
+async function ensureRecapPlayersLoaded() {
+  if (recapAllPlayers !== null || recapPlayersLoading) { renderRecapSearch(); return; }
+  await refreshRecapPlayers();
+}
+
+async function refreshRecapPlayers() {
+  recapPlayersLoading = true;
+  $("recapSearchMeta").textContent = "Caricamento elenco calciatori…";
+  try {
+    const snap = await getDocs(collection(db, "players"));
+    recapAllPlayers = [];
+    snap.forEach((d) => recapAllPlayers.push({ id: d.id, ...d.data() }));
+    recapAllPlayersLoadedAt = Date.now();
+  } catch (e) {
+    console.error(e);
+    $("recapSearchMeta").textContent = "Errore nel caricamento: " + e.message;
+  } finally {
+    recapPlayersLoading = false;
+  }
+  renderRecapSearch();
+}
+
+function recapPlayerStatusLabel(p) {
+  if (p.status === "assigned") {
+    const teamName = teamsById.get(p.assignedTeam)?.name || p.assignedTeam;
+    return `assegnato a ${teamName} (${formatCredits(p.price)})`;
+  }
+  if (p.status === "called") return "in asta ora";
+  if (p.status === "skipped") return "passato (nessuna offerta)";
+  return "disponibile";
+}
+
+function renderRecapSearch() {
+  const metaEl = $("recapSearchMeta");
+  const resultsEl = $("recapSearchResults");
+  if (!metaEl || !resultsEl) return;
+  if (recapPlayersLoading) return; // il messaggio "Caricamento…" resta finché non finisce
+  if (!recapAllPlayers) {
+    metaEl.textContent = "";
+    resultsEl.innerHTML = "";
+    return;
+  }
+  const loadedAt = recapAllPlayersLoadedAt
+    ? new Date(recapAllPlayersLoadedAt).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })
+    : "—";
+  const q = ($("recapPlayerSearch").value || "").trim().toLowerCase();
+  if (!q) {
+    metaEl.textContent = `Elenco aggiornato alle ${loadedAt} (non in tempo reale — premi "Aggiorna" per rileggerlo). Scrivi un nome per cercare tra i ${recapAllPlayers.length} calciatori.`;
+    resultsEl.innerHTML = "";
+    return;
+  }
+  const matches = recapAllPlayers
+    .filter((p) => (p.cognome || "").toLowerCase().includes(q) || (p.nome || "").toLowerCase().includes(q))
+    .sort((a, b) => fullName(a).localeCompare(fullName(b), "it"))
+    .slice(0, 50);
+  metaEl.textContent = `Elenco aggiornato alle ${loadedAt}. ${matches.length} risultat${matches.length === 1 ? "o" : "i"}${matches.length === 50 ? " (mostrati i primi 50)" : ""}.`;
+  if (!matches.length) {
+    resultsEl.innerHTML = '<p class="small">Nessun calciatore trovato.</p>';
+    return;
+  }
+  resultsEl.innerHTML = matches.map((p) => {
+    const sigle = mantraRoles(p);
+    const badges = sigle.map((s) => `<span class="tp-role ${mantraColorGroup(s)}">${escapeHtml(s)}</span>`).join("");
+    const logoUrl = clubLogoUrlFor(p);
+    const logoImg = `<img class="tp-club-logo" src="${escapeHtml(logoUrl || "")}" alt="" style="${logoUrl ? "" : "display:none;"}" onerror="this.style.display='none'" />`;
+    return `<div class="recap-roster-row" style="grid-template-columns: minmax(20px, max-content) auto 1fr auto;">
+      <span class="tp-roles">${badges}</span>
+      ${logoImg}
+      <span class="recap-roster-name">${escapeHtml(fullName(p))} <span class="small">(${escapeHtml(p.squadra || "")})</span></span>
+      <span class="small" style="white-space:nowrap;">${escapeHtml(recapPlayerStatusLabel(p))}</span>
+    </div>`;
+  }).join("");
+}
+
+$("recapPlayerSearch").addEventListener("input", renderRecapSearch);
+$("btnRecapRefresh").onclick = refreshRecapPlayers;
 
 function renderTicker() {
   // Sezione "Ultime assegnazioni" rimossa dalla vista live su richiesta.
@@ -1261,6 +1371,24 @@ $("btnPause").onclick = async () => {
   }
 };
 
+// "⏱️ ±10s": regola al volo il conto alla rovescia in corso su questo
+// calciatore (es. per dare più tempo durante un rilancio combattuto, o per
+// chiudere prima se serve), SENZA toccare la durata di default salvata in
+// config (openTimerSeconds/bidTimerSeconds), che resta quella impostata da
+// "💾 Aggiorna solo timer/regole" per i PROSSIMI calciatori. Riduce solo il
+// tempo residuo *visibile*: se il nuovo timerEndsAt cade nel passato,
+// l'auto-finalizzazione già in ascolto (maybeAutoFinalize) se ne accorge al
+// prossimo tick e chiude la chiamata esattamente come farebbe uno scadere
+// naturale del timer, senza bisogno di logica dedicata qui.
+async function adjustLiveTimer(deltaMs) {
+  if (!state || state.status !== "bidding" || !state.timerEndsAt) return;
+  const endsAt = timerEndsAtMs();
+  const newEndsAt = Math.max(Date.now(), endsAt + deltaMs);
+  await updateDoc(doc(db, "state", "auction"), { timerEndsAt: Timestamp.fromMillis(newEndsAt) });
+}
+$("btnTimerMinus").onclick = () => adjustLiveTimer(-10000);
+$("btnTimerPlus").onclick = () => adjustLiveTimer(10000);
+
 // "⬅️ Torna indietro": a differenza della vecchia "Annulla ultima" (che
 // funzionava SOLO se l'ultimo calciatore era stato venduto), questo pulsante
 // torna indietro all'ultimo calciatore RISOLTO qualsiasi sia stato l'esito
@@ -1474,6 +1602,11 @@ function renderControl() {
   $("btnMarkUnsold").disabled = state.status !== "bidding";
   $("btnCancelCall").disabled = !["bidding", "paused"].includes(state.status) || !state.currentPlayerId;
   $("btnManualBid").disabled = state.status !== "bidding";
+  // Nudge timer "a caldo": ha senso solo mentre un'asta è VERAMENTE aperta su
+  // un calciatore in questo momento (non in pausa: lì il tempo residuo è già
+  // congelato in pausedRemainingMs e si tocca semmai riprendendo).
+  $("btnTimerMinus").disabled = state.status !== "bidding";
+  $("btnTimerPlus").disabled = state.status !== "bidding";
   // "Torna indietro" ha senso solo quando non c'è già un'asta aperta su un
   // ALTRO calciatore (stessi stati in cui si può chiamare il prossimo): si
   // rimette in gioco l'ultimo calciatore risolto, qualsiasi esito abbia avuto.
@@ -1695,7 +1828,17 @@ function renderHistoryList() {
   // dell'ordine di chiamata (chi ha un indice più alto è stato chiamato
   // dopo). I calciatori senza indice (non nel drawOrder attuale) finiscono
   // in fondo.
+  // Nel filtro "Tutti i calciatori" la lista include anche i "mai chiamato"
+  // ancora in coda all'asta: il loro indice nel drawOrder è casuale (posto
+  // dallo shuffle iniziale, non dall'ordine con cui verranno chiamati) e può
+  // benissimo superare quello di calciatori già risolti, seppellendo così lo
+  // storico vero e proprio sotto centinaia di "mai chiamato" una volta
+  // superato il limite di 200 righe. Per evitarlo, i risolti (assegnati o
+  // passati) vengono sempre prima, indipendentemente dal loro indice.
+  const statusRank = (p) => (p.status === "assigned" || p.status === "skipped") ? 0 : 1;
   list.sort((a, b) => {
+    const ra = statusRank(a); const rb = statusRank(b);
+    if (ra !== rb) return ra - rb;
     const ia = drawOrder.indexOf(a.id); const ib = drawOrder.indexOf(b.id);
     if (ia === -1 && ib === -1) return fullName(a).localeCompare(fullName(b), "it");
     if (ia === -1) return 1;
