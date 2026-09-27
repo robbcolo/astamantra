@@ -428,7 +428,7 @@ label { font-size: 0.85rem; color: var(--text-dim); display: block; margin: 10px
      senza bisogno di scorrimento orizzontale. Se davvero non entrano tutte
      (schermi stretti), la riga va a capo invece di scorrere. */
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 8px;
+  gap: 0;
   align-items: start;
 }
 @media (min-width: 1300px) {
@@ -447,7 +447,7 @@ label { font-size: 0.85rem; color: var(--text-dim); display: block; margin: 10px
   border: none;
   border-right: 1px solid var(--border);
   border-radius: 0;
-  padding: 4px 10px 6px;
+  padding: 4px 8px 6px 6px;
   cursor: pointer;
   transition: background-color .15s ease;
   display: flex;
@@ -455,7 +455,7 @@ label { font-size: 0.85rem; color: var(--text-dim); display: block; margin: 10px
   min-width: 0;
 }
 .teams-grid .team-col:first-child { padding-left: 2px; }
-.teams-grid .team-col:last-child { border-right: none; }
+.teams-grid .team-col:last-child { border-right: none; padding-right: 2px; }
 .team-col:hover { background: rgba(255,255,255,0.03); }
 .team-col.me { background: rgba(124,92,255,0.08); box-shadow: inset 3px 0 0 var(--accent); }
 .team-col.leading { background: rgba(80,220,140,0.08); box-shadow: inset 3px 0 0 var(--ok); }
