@@ -237,16 +237,26 @@ Squadra 2
     <div class="card">
       <div class="teams-grid" id="teamsGrid"></div>
       <div id="recapPanel" class="recap-panel hidden">
-        <div class="recap-grid">
-          <div class="recap-card" style="grid-column: 1 / -1;">
-            <div class="row between" style="align-items:center; margin-bottom:8px;">
-              <h4 style="margin:0;">🔍 Cerca tra tutti i calciatori</h4>
-              <button id="btnRecapRefresh" class="btn ghost btn-sm">🔄 Aggiorna elenco</button>
-            </div>
-            <input type="text" id="recapPlayerSearch" placeholder="Cerca un calciatore per nome…" />
-            <p class="small" id="recapSearchMeta" style="margin:4px 0 0 0;"></p>
-            <div id="recapSearchResults" class="recap-roster-table" style="margin-top:8px;"></div>
+        <!-- Il box di ricerca sta in una riga a sé (sempre a piena larghezza):
+             tenerlo nella STESSA griglia auto-fit delle card sotto impedisce
+             al motore di comprimere le colonne vuote di quella griglia (uno
+             span "1 / -1" tiene "vive" tutte le colonne teoricamente
+             possibili anche quando la riga sotto ne usa solo alcune),
+             lasciando spazio morto a destra invece di farlo riempire alle
+             card successive. -->
+        <div class="recap-card" style="margin-bottom:12px;">
+          <div class="row between" style="align-items:center; margin-bottom:8px;">
+            <h4 style="margin:0;">🔍 Cerca tra tutti i calciatori</h4>
+            <button id="btnRecapRefresh" class="btn ghost btn-sm">🔄 Aggiorna elenco</button>
           </div>
+          <input type="text" id="recapPlayerSearch" placeholder="Cerca un calciatore per nome…" />
+          <p class="small" id="recapSearchMeta" style="margin:4px 0 0 0;"></p>
+          <div id="recapSearchResults" class="recap-roster-table" style="margin-top:8px;"></div>
+        </div>
+
+        <!-- Riepilogo asta + La mia rosa: card compatte, larghezza "naturale"
+             (non si allargano oltre un certo limite anche su schermi larghi). -->
+        <div class="recap-row recap-row-compact">
           <div class="recap-card">
             <h4>Riepilogo asta</h4>
             <div class="recap-kv-list" id="recapSummaryList"></div>
@@ -255,6 +265,11 @@ Squadra 2
             <h4>La mia rosa</h4>
             <div id="recapRosterTable" class="recap-roster-table"></div>
           </div>
+        </div>
+
+        <!-- Diversificazione squadra + Completamento ruoli: si allargano per
+             sfruttare tutto lo spazio orizzontale rimasto, divise a metà. -->
+        <div class="recap-row recap-row-wide">
           <div class="recap-card">
             <h4>Diversificazione squadra</h4>
             <p class="small" style="margin-top:-4px;">Quanti calciatori hai preso per ogni squadra di Serie A.</p>

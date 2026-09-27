@@ -694,11 +694,25 @@ label { font-size: 0.85rem; color: var(--text-dim); display: block; margin: 10px
 
 /* ---------------- Pannello "Recap Asta" ---------------- */
 .recap-panel.hidden { display: none; }
-.recap-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+/* Righe di card: usiamo flexbox (non un'unica griglia auto-fit condivisa)
+   apposta, perché qui servono DUE comportamenti diversi nella stessa vista —
+   "Riepilogo asta"/"La mia rosa" restano compatte anche su schermi larghi,
+   mentre "Diversificazione squadra"/"Completamento ruoli" devono allargarsi
+   per riempire tutto lo spazio orizzontale rimasto. Con un'unica griglia
+   auto-fit (come in precedenza) le due coppie sarebbero state vincolate a
+   comportarsi allo stesso modo. */
+.recap-row {
+  display: flex; flex-wrap: wrap;
   gap: 12px;
   align-items: start;
+  margin-bottom: 12px;
+}
+.recap-row-compact > .recap-card {
+  flex: 1 1 260px;
+  max-width: 360px; /* non si allargano oltre, anche se lo spazio ci sarebbe */
+}
+.recap-row-wide > .recap-card {
+  flex: 1 1 320px; /* nessun max-width: si dividono tutto lo spazio rimasto */
 }
 .recap-card {
   background: var(--panel-2);
