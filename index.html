@@ -78,6 +78,10 @@ Squadra 2
       <div class="row">
         <button id="btnQuickUpdate" class="btn grow">💾 Aggiorna solo timer/regole (senza toccare rose)</button>
       </div>
+      <div class="row">
+        <button id="btnRestartAuction" class="btn grow" style="border-color:var(--warn);">🔄 Ricomincia asta (mantieni listone e squadre)</button>
+        <button id="btnReshuffle" class="btn grow">🎲 Rimescola ordine chiamata</button>
+      </div>
       <p class="small" id="setupStatus"></p>
     </div>
 
@@ -182,7 +186,13 @@ Squadra 2
                   <div class="bid-team" id="currentBidTeam">Nessuna offerta</div>
                 </div>
               </div>
-              <div id="timerRing" class="timer-ring ok">⏳ —</div>
+              <div id="timerRing" class="timer-ring ok">
+                <svg class="timer-ring-svg" viewBox="0 0 64 64" aria-hidden="true">
+                  <circle class="timer-ring-track" cx="32" cy="32" r="28"></circle>
+                  <circle id="timerRingArc" class="timer-ring-arc" cx="32" cy="32" r="28"></circle>
+                </svg>
+                <span id="timerRingLabel" class="timer-ring-label">⏳ —</span>
+              </div>
             </div>
 
             <div class="bid-buttons" id="bidButtons">

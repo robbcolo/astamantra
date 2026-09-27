@@ -511,11 +511,17 @@ function progressLabel() {
   return total ? `${called} / ${total} calciatori chiamati` : "";
 }
 
+const TIMER_RING_CIRCUMFERENCE = 2 * Math.PI * 28; // deve combaciare con r=28 nell'SVG e con lo stroke-dasharray fissato in CSS
+
 function tickTimer() {
   const ring = $("timerRing");
-  const { label, cls } = ringDisplay(state);
-  ring.textContent = label;
+  const { label, cls, pct } = ringDisplay(state);
+  $("timerRingLabel").textContent = label;
   ring.className = "timer-ring " + cls;
+  // L'arco si "svuota" partendo pieno (offset 0) e accorciandosi in senso
+  // orario mano a mano che pct scende verso 0 (tempo scaduto).
+  const offset = TIMER_RING_CIRCUMFERENCE * (1 - pct);
+  $("timerRingArc").style.strokeDashoffset = String(offset);
 }
 
 // Un solo intervallo per: aggiornare il conto alla rovescia a schermo e,
@@ -617,6 +623,7 @@ async function placeBid(amount, isDelta) {
         currentBid: newBid,
         currentBidTeam: myTeamId,
         timerEndsAt: Timestamp.fromMillis(Date.now() + timerMs),
+        timerTotalMs: timerMs,
       });
     });
   } catch (e) {
@@ -1028,10 +1035,146 @@ $("btnWipe").onclick = async () => {
   alert("Dati cancellati. Configura una nuova asta dal pannello impostazioni.");
 };
 
+/** "Ricomincia asta": riporta l'asta allo stato di partenza (nessun
+ * calciatore chiamato, crediti/rose azzerati) SENZA toccare il listone
+ * caricato, i nomi delle squadre, le regole rosa/timer o l'ordine di
+ * chiamata già mescolato in config — a differenza di "Inizializza" (che
+ * ricarica tutto da zero dal CSV), qui config/public resta intatto e si
+ * riscrivono solo players/teams/state. Utile per fare una prova dell'asta
+ * e poi ripartire senza dover ricaricare CSV e riscrivere nomi squadre. */
+$("btnRestartAuction").onclick = async () => {
+  if (!config) { $("setupError").textContent = "Nessuna asta configurata da poter ricominciare."; return; }
+  const ok = confirm(
+    "Ricominciare l'asta da zero?\n\n" +
+    "Il listone caricato, i nomi delle squadre, le regole e l'ordine di chiamata NON cambiano.\n" +
+    "Ma TUTTE le rose acquistate finora e i crediti spesi verranno azzerati e si ripartirà dal primo calciatore."
+  );
+  if (!ok) return;
+
+  $("btnRestartAuction").disabled = true;
+  $("setupError").textContent = "";
+  $("setupStatus").textContent = "Ripristino in corso, un momento…";
+  try {
+    const budget = config.budget || DEFAULT_CONFIG.budget;
+    const playersSnap = await getDocs(collection(db, "players"));
+    const teamsSnap = await getDocs(collection(db, "teams"));
+    const ops = [];
+    playersSnap.forEach((d) => ops.push({
+      ref: doc(db, "players", d.id),
+      data: { status: "available", assignedTeam: null, price: null },
+      merge: true,
+    }));
+    teamsSnap.forEach((d) => ops.push({
+      ref: doc(db, "teams", d.id),
+      data: { credits: budget, roster: [] },
+      merge: true,
+    }));
+    await commitInChunks(ops);
+
+    await setDoc(doc(db, "state", "auction"), {
+      status: "idle",
+      currentPlayerId: null,
+      currentBid: 0,
+      currentBidTeam: null,
+      timerEndsAt: null,
+      nextIndex: 0,
+      calledCount: 0,
+      totalCount: (config.drawOrder || []).length,
+      lastSoldPlayerId: null,
+      lastSoldTeam: null,
+      lastSoldPrice: null,
+      lastSoldPlayerName: null,
+      lastResolvedPlayerId: null,
+      salesLog: [],
+    });
+
+    $("setupStatus").textContent = "✅ Asta ricominciata: listone e squadre sono rimasti gli stessi, rose e crediti azzerati.";
+  } catch (e) {
+    console.error(e);
+    $("setupError").textContent = "Errore durante il ripristino: " + e.message;
+  } finally {
+    $("btnRestartAuction").disabled = false;
+  }
+};
+
+/** "Rimescola ordine chiamata": rigenera un nuovo ordine casuale per GLI
+ * STESSI calciatori già caricati (non ricarica il CSV), aggiornando solo
+ * config.drawOrder. Ha senso solo prima che l'asta sia partita o subito
+ * dopo un "Ricomincia asta" — se l'asta è già in corso (qualche calciatore
+ * già chiamato), rimescolare romperebbe il progresso attuale (nextIndex
+ * punterebbe al posto sbagliato), quindi in quel caso chiediamo prima di
+ * riportare anche l'asta a zero. */
+$("btnReshuffle").onclick = async () => {
+  if (!config || !config.drawOrder || !config.drawOrder.length) {
+    $("setupError").textContent = "Nessun listone caricato da poter rimescolare.";
+    return;
+  }
+  const alreadyStarted = state && (state.calledCount || 0) > 0;
+  const msg = alreadyStarted
+    ? "L'asta ha già dei calciatori chiamati: rimescolare ora romperebbe l'ordine in corso.\n\n" +
+      "Confermando, l'ordine viene rimescolato E l'asta riparte da zero (stessa cosa di 'Ricomincia asta', con in più il nuovo ordine)."
+    : "Rimescolare l'ordine di chiamata dei calciatori? Il nuovo ordine sarà casuale e diverso da quello attuale.";
+  if (!confirm(msg)) return;
+
+  $("btnReshuffle").disabled = true;
+  $("setupError").textContent = "";
+  try {
+    const newDrawOrder = shuffle(config.drawOrder);
+    await updateDoc(doc(db, "config", "public"), { drawOrder: newDrawOrder });
+
+    if (alreadyStarted) {
+      // Stesso ripristino di "Ricomincia asta", per ripartire in modo
+      // coerente con il nuovo ordine (altrimenti nextIndex punterebbe a
+      // una posizione ormai senza senso nel drawOrder appena rimescolato).
+      const budget = config.budget || DEFAULT_CONFIG.budget;
+      const playersSnap = await getDocs(collection(db, "players"));
+      const teamsSnap = await getDocs(collection(db, "teams"));
+      const ops = [];
+      playersSnap.forEach((d) => ops.push({
+        ref: doc(db, "players", d.id),
+        data: { status: "available", assignedTeam: null, price: null },
+        merge: true,
+      }));
+      teamsSnap.forEach((d) => ops.push({
+        ref: doc(db, "teams", d.id),
+        data: { credits: budget, roster: [] },
+        merge: true,
+      }));
+      await commitInChunks(ops);
+      await setDoc(doc(db, "state", "auction"), {
+        status: "idle", currentPlayerId: null, currentBid: 0, currentBidTeam: null,
+        timerEndsAt: null, nextIndex: 0, calledCount: 0, totalCount: newDrawOrder.length,
+        lastSoldPlayerId: null, lastSoldTeam: null, lastSoldPrice: null, lastSoldPlayerName: null,
+        lastResolvedPlayerId: null, salesLog: [],
+      });
+      $("setupStatus").textContent = "✅ Ordine rimescolato e asta ricominciata da zero.";
+    } else {
+      $("setupStatus").textContent = "✅ Ordine di chiamata rimescolato.";
+    }
+  } catch (e) {
+    console.error(e);
+    $("setupError").textContent = "Errore durante il rimescolamento: " + e.message;
+  } finally {
+    $("btnReshuffle").disabled = false;
+  }
+};
+
 async function commitInChunks(ops, chunkSize = 400) {
   for (let i = 0; i < ops.length; i += chunkSize) {
     const batch = writeBatch(db);
-    for (const op of ops.slice(i, i + chunkSize)) batch.set(op.ref, op.data);
+    for (const op of ops.slice(i, i + chunkSize)) {
+      // op.merge: aggiorna SOLO i campi indicati in op.data, lasciando
+      // intatto il resto del documento (usato da "Ricomincia asta"/
+      // "Rimescola" per azzerare status/crediti/rosa senza toccare gli
+      // altri campi, es. i dati del calciatore importati dal CSV o il nome
+      // della squadra). Usiamo batch.update() invece di batch.set(...,
+      // {merge:true}): stesso risultato per un documento già esistente
+      // (sempre il caso qui), ma più esplicito. Senza op.merge si
+      // sovrascrive l'intero documento (comportamento originale di
+      // "Inizializza", che crea i documenti da zero).
+      if (op.merge) batch.update(op.ref, op.data);
+      else batch.set(op.ref, op.data);
+    }
     await batch.commit();
   }
 }
@@ -1074,6 +1217,7 @@ $("btnNext").onclick = async () => {
       currentBid: 0,
       currentBidTeam: null,
       timerEndsAt: Timestamp.fromMillis(Date.now() + timerMs),
+      timerTotalMs: timerMs,
       nextIndex: idx + 1,
       calledCount: (state.calledCount || 0) + 1,
     });
@@ -1151,6 +1295,7 @@ $("btnUndo").onclick = async () => {
       currentBid: 0,
       currentBidTeam: null,
       timerEndsAt: Timestamp.fromMillis(Date.now() + timerMs),
+      timerTotalMs: timerMs,
       lastSoldPlayerId: null,
       lastSoldTeam: null,
       lastSoldPrice: null,
@@ -1295,6 +1440,7 @@ async function adminManualBid(teamId, amount) {
       currentBid: amount,
       currentBidTeam: teamId,
       timerEndsAt: Timestamp.fromMillis(Date.now() + timerMs),
+      timerTotalMs: timerMs,
     });
   });
 }

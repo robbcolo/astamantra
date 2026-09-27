@@ -281,19 +281,30 @@ export function formatCountdown(msRemaining) {
   return String(s);
 }
 
-/** Testo/colore per l'anello del timer, condiviso tra pagina partecipante e admin. */
-export function ringDisplay(state) {
-  if (!state) return { label: "—", cls: "ok" };
+/** Testo/colore/percentuale per l'anello del timer, condiviso tra pagina
+ * partecipante e admin. "pct" è la frazione di tempo RIMASTO (1 = appena
+ * partito, 0 = scaduto) usata per disegnare l'arco SVG che si svuota;
+ * "fallback" è la durata totale usata quando manca timerTotalMs (asta
+ * partita prima di questo aggiornamento, o dato mancante per altro motivo),
+ * cosicché l'arco resti comunque sensato invece di sparire o restare pieno. */
+export function ringDisplay(state, fallbackTotalMs = 20000) {
+  if (!state) return { label: "—", cls: "ok", pct: 1 };
   if (state.status === "bidding" && state.timerEndsAt) {
     const endsAt = state.timerEndsAt.toMillis ? state.timerEndsAt.toMillis() : state.timerEndsAt;
-    const secs = Math.max(0, Math.ceil((endsAt - Date.now()) / 1000));
-    return { label: "⏳ " + secs, cls: secs <= 5 ? "low" : secs <= 10 ? "mid" : "ok" };
+    const remainingMs = Math.max(0, endsAt - Date.now());
+    const secs = Math.ceil(remainingMs / 1000);
+    const totalMs = state.timerTotalMs || fallbackTotalMs;
+    const pct = totalMs > 0 ? Math.min(1, remainingMs / totalMs) : 0;
+    return { label: "⏳ " + secs, cls: secs <= 5 ? "low" : secs <= 10 ? "mid" : "ok", pct };
   }
   if (state.status === "paused") {
-    const secs = Math.max(0, Math.ceil((state.pausedRemainingMs || 0) / 1000));
-    return { label: "⏸ " + secs, cls: "mid" };
+    const remainingMs = state.pausedRemainingMs || 0;
+    const secs = Math.ceil(remainingMs / 1000);
+    const totalMs = state.timerTotalMs || fallbackTotalMs;
+    const pct = totalMs > 0 ? Math.min(1, remainingMs / totalMs) : 0;
+    return { label: "⏸ " + secs, cls: "mid", pct };
   }
-  return { label: "—", cls: "ok" };
+  return { label: "—", cls: "ok", pct: 1 };
 }
 
 export function escapeHtml(s) {

@@ -231,9 +231,13 @@ label { font-size: 0.85rem; color: var(--text-dim); display: block; margin: 10px
 .player-photo-wrap {
   display: flex; align-items: stretch; justify-content: center;
   flex: 0 0 auto;
+  /* Leggermente staccata dal bordo sinistro della card invece di
+     partire subito attaccata al bordo: un piccolo margine interno la
+     fa "respirare" senza spostare il resto del layout. */
+  margin-left: 18px;
 }
 .player-photo {
-  width: 200px; height: auto; align-self: stretch;
+  width: 225px; height: auto; align-self: stretch;
   min-height: 130px; max-height: 260px;
   border-radius: 16px;
   object-fit: cover; background: var(--panel-3);
@@ -258,6 +262,7 @@ label { font-size: 0.85rem; color: var(--text-dim); display: block; margin: 10px
 .stage-info > * { width: 100%; max-width: 560px; }
 @media (max-width: 560px) {
   .stage-player-row { flex-direction: column; align-items: center; text-align: center; }
+  .player-photo-wrap { margin-left: 0; }
   .player-photo { width: 96px; min-height: 96px; max-height: 96px; align-self: center; }
   .stage-info { padding: 0; }
 }
@@ -310,23 +315,28 @@ label { font-size: 0.85rem; color: var(--text-dim); display: block; margin: 10px
   padding: 5px 4px;
 }
 .stage .player-name {
-  font-size: clamp(1.1rem, 2.6vw, 1.5rem);
+  font-size: clamp(1.5rem, 3.6vw, 2.1rem);
   font-weight: 800;
   line-height: 1.1;
   margin: 2px 0 2px 0;
   word-break: break-word;
 }
-.stage .player-meta { color: var(--text-dim); font-size: 0.78rem; }
+.stage .player-meta {
+  color: var(--text-dim);
+  font-size: 1.05rem;
+  font-weight: 600;
+}
 .player-meta-row {
-  display: flex; align-items: center; justify-content: center; gap: 8px;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
   margin-bottom: 6px;
 }
 .stage-club-logo {
-  width: 26px; height: 26px; object-fit: contain;
+  width: 40px; height: 40px; object-fit: contain;
   flex: 0 0 auto;
 }
 @media (max-width: 560px) {
-  .stage-club-logo { width: 20px; height: 20px; }
+  .stage .player-meta { font-size: 0.85rem; }
+  .stage-club-logo { width: 28px; height: 28px; }
 }
 
 .bid-display {
@@ -348,19 +358,51 @@ label { font-size: 0.85rem; color: var(--text-dim); display: block; margin: 10px
   color: #c9bcff;
   font-weight: 700;
 }
+/* Timer ad arco SVG che si svuota: due cerchi sovrapposti (binario fisso +
+   arco colorato) ruotati di -90° cosicché l'arco parta dalle ore 12 e si
+   accorci in senso orario mano a mano che il tempo scorre, con il numero di
+   secondi al centro. Il colore (verde/giallo/rosso) resta pilotato dalle
+   classi .ok/.mid/.low già usate altrove, per coerenza visiva col resto
+   dell'interfaccia. */
 .timer-ring {
-  font-size: clamp(1.3rem, 4vw, 1.9rem);
-  font-weight: 900;
-  min-width: 2.6em; height: 1.9em;
-  display: flex; align-items: center; justify-content: center; gap: 4px;
+  position: relative;
+  width: clamp(64px, 14vw, 84px); height: clamp(64px, 14vw, 84px);
+  flex: 0 0 auto;
+  display: flex; align-items: center; justify-content: center;
   border-radius: 999px;
-  border: none;
   background: #0b0818;
-  padding: 0 18px;
 }
-.timer-ring.low { color: #ff8a97; box-shadow: inset 0 0 0 2px var(--danger); animation: pulse 1s infinite; }
-.timer-ring.mid { color: #ffd67a; box-shadow: inset 0 0 0 2px var(--warn); }
-.timer-ring.ok { color: #9fe6bd; box-shadow: inset 0 0 0 2px var(--ok); }
+.timer-ring-svg {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  transform: rotate(-90deg);
+}
+.timer-ring-track {
+  fill: none;
+  stroke: rgba(255,255,255,0.08);
+  stroke-width: 6;
+}
+.timer-ring-arc {
+  fill: none;
+  stroke-width: 6;
+  stroke-linecap: round;
+  stroke-dasharray: 175.93; /* 2 * PI * r(28), calcolato una volta e fissato qui */
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 0.22s linear, stroke 0.2s linear;
+}
+.timer-ring-label {
+  position: relative;
+  font-size: clamp(1rem, 3vw, 1.35rem);
+  font-weight: 900;
+  line-height: 1;
+  display: flex; align-items: center; justify-content: center; gap: 2px;
+}
+.timer-ring.low .timer-ring-arc { stroke: var(--danger); }
+.timer-ring.low .timer-ring-label { color: #ff8a97; }
+.timer-ring.low { animation: pulse 1s infinite; }
+.timer-ring.mid .timer-ring-arc { stroke: var(--warn); }
+.timer-ring.mid .timer-ring-label { color: #ffd67a; }
+.timer-ring.ok .timer-ring-arc { stroke: var(--ok); }
+.timer-ring.ok .timer-ring-label { color: #9fe6bd; }
 @keyframes pulse { 0%,100% { transform: scale(1);} 50% { transform: scale(1.06);} }
 
 .bid-buttons { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
