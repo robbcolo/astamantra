@@ -439,19 +439,26 @@ label { font-size: 0.85rem; color: var(--text-dim); display: block; margin: 10px
   .teams-grid { grid-template-columns: repeat(10, minmax(0, 1fr)); }
 }
 .team-col {
-  background: var(--panel-2);
-  border: 2px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 8px 9px 10px;
+  /* Niente più "box" per squadra (sfondo/bordo/angoli): le squadre sono
+     colonne affiancate separate da una semplice riga verticale, per
+     lasciare tutto lo spazio orizzontale possibile a ruoli+nome+prezzo
+     (con più ruoli Mantra il nome del calciatore si troncava troppo). */
+  background: transparent;
+  border: none;
+  border-right: 1px solid var(--border);
+  border-radius: 0;
+  padding: 4px 10px 6px;
   cursor: pointer;
-  transition: border-color .15s ease;
+  transition: background-color .15s ease;
   display: flex;
   flex-direction: column;
   min-width: 0;
 }
-.team-col:hover { border-color: var(--accent); }
-.team-col.me { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
-.team-col.leading { border-color: var(--ok); box-shadow: 0 0 0 1px var(--ok) inset; }
+.teams-grid .team-col:first-child { padding-left: 2px; }
+.teams-grid .team-col:last-child { border-right: none; }
+.team-col:hover { background: rgba(255,255,255,0.03); }
+.team-col.me { background: rgba(124,92,255,0.08); box-shadow: inset 3px 0 0 var(--accent); }
+.team-col.leading { background: rgba(80,220,140,0.08); box-shadow: inset 3px 0 0 var(--ok); }
 .t-head { margin-bottom: 6px; display: flex; align-items: center; gap: 6px; min-width: 0; }
 .team-col .t-name {
   font-weight: 700; font-size: 0.92rem; line-height: 1.15;
